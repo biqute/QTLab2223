@@ -15,7 +15,7 @@ $ git clone https://github.com/biqute/QTLab2223.git
 
 ### Project top-level directory layout
     
-    QTLab2122
+    QTLab2223
     │  
     ├── SingleIRdetection  # Single IR photon detection
     ├── TWPAandQubit       # Parametric amplifier characterization   
