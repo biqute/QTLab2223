@@ -2,14 +2,14 @@ import pyvisa as visa
 import numpy as np
 import matplotlib.pyplot as plt
 
-class manage_instrument:
+class ManageInstrument:
     """
     This class allows creating an Object with:
     - Just one field "instr" that allows sending queries to the instrument: instr.query("<query in SCPI language>")
     - A bunch of methods that make simple sending queries to the instrument, without explicitly writing the SCPI commands 
     - A method "single_scan(...)" that makes the instrument measure the S21 spectrum (see more in the method definition)
     """
-    # HOW THE INSTRUMENT WORKS:
+    # HOW THE INSTRUMENT WORKS (operatively):
     # In [Continuos scan] mode, the instrument makes consecutive scans of the displayed frequency interval.
     # At each scan, it measures S21 for each frequency in the interval. The results go in the memory of
     # the instrument, where it stores the LAST "navgs" measures. Once it performs a new scan, the oldest
@@ -35,7 +35,7 @@ class manage_instrument:
         # Close connection to instrument
         self.instr.close()
     
-    def getId(self):
+    def get_id(self):
         #get the name of the istrument  
         self.instr.query("*IDN?")
 
@@ -43,30 +43,30 @@ class manage_instrument:
         #Reset any query
         self.instr.query('*RST')
     
-    def singleScan(self,fmin,fmax,powerdBm,npoints,navgs): 
+    def single_scan(self,fmin,fmax,powerdBm,npoints,navgs): 
         """
         Usage: <da scrivere>
         """
 
         #Set the the desired frequency range to display on the screen (measurements are performed on the displayed range)
-        self.setRange(fmin,fmax)
+        self.set_range(fmin,fmax)
         
         #Set desired output power
-        self.setPower(powerdBm)
+        self.set_power(powerdBm)
         
         #Set number of sampled frequencies in the displayed frequency range (number of sweep points)
-        self.setSweepPoints(npoints)
+        self.set_sweep_points(npoints)
         
         #Set number of averages (number of sweeps done in a single scan, it is the number of times
         #the value at a frequency is measured and then those navgs values are averaged and then displayed)
-        self.setAverage(navgs)
+        self.set_average(navgs)
         
         #Autoscale y axis displayed range
         self.autoscale()
 
         #With the instructions above we prepared the display. Now we call a function that makes
         #the "navgs" sweeps, so at the end of the function we'll see the averaged measurements on the screen.
-        self.makeSweeps()
+        self.make_sweeps()
         
         #Puts the displayed data into arrays
         freq, I, Q = self.readIQ()
@@ -74,12 +74,12 @@ class manage_instrument:
         #Now we got the desired values, we set the display of the instrument in a way that is usefull
         #to see real time changes on the trasmission line
         self.instr.query('INIT:CONT 1;*OPC?') #Set continuos sweep
-        self.setAverage(1)
+        self.set_average(1)
 
         
         return freq,I,Q
 
-    def makeSweeps(self):
+    def make_sweeps(self):
         #Clear the memory of the instrument (past sweeps measurements)
         self.instr.query('AVER:CLE;*OPC?')
         
@@ -102,12 +102,12 @@ class manage_instrument:
         #Read I (real part of S21)
         self.instr.query('CALC:FORMat REAL;*OPC?')  #Display real part, in Linear scale
         self.autoscale()
-        freq,I=self.readData()  #Effectively reads what is displayed on the screen
+        freq,I=self.read_data()  #Effectively reads what is displayed on the screen
 
         #Read Q (imaginary part of S21)
         self.instr.query('CALC:FORMat IMAG;*OPC?')  #Display imaginary part, in Linear scale    
         self.autoscale()
-        freq,Q=self.readData() #Effectively reads what is displayed on the screen
+        freq,Q=self.read_data() #Effectively reads what is displayed on the screen
 
         #Displays S21dB
         self.instr.query('CALC:FORMat MLOG;*OPC?')  #Display modulus (S21), in dB   
@@ -115,7 +115,7 @@ class manage_instrument:
 
         return freq, I, Q
 
-    def readData(self):
+    def read_data(self):
         """
         Effectively reads what is displayed on the screen. Returns 2 arrays containing
         the X and Y coordinates of the points of the graph displayed on the screen.
@@ -136,7 +136,7 @@ class manage_instrument:
 
         return freq, data
 
-    def setMode(self,mode):
+    def set_mode(self,mode):
         # Select mode of instrument (NA or SA)
         if str(mode) == "NA":
             self.instr.query('INST:SEL "NA";*OPC?')
@@ -152,14 +152,14 @@ class manage_instrument:
         #Autoscale the y axes
         self.instr.query('DISP:WIND:TRAC'+str(trace)+':Y:AUTO;*OPC?')
 
-    def setSweepPoints(self,npoints):
+    def set_sweep_points(self,npoints):
         #Set the number of sample points in the displayed(!!) frequency range 
         npoints=round(abs(npoints))
         if (npoints > 10001):
             npoints = 10001
         self.instr.query('SWE:POIN '+str(npoints)+';*OPC?')    
 
-    def setPower(self,powerdBm):
+    def set_power(self,powerdBm):
         #Set the output power of the segnal 
         if(powerdBm>3):
             powerdBm=3
@@ -167,33 +167,33 @@ class manage_instrument:
             powerdBm=-45
         self.instr.query('SOUR:POW '+str(round(powerdBm,1))+';*OPC?') 
 
-    def setRange(self,min,max):
+    def set_range(self,min,max):
         #Set the min of the freq range
         self.instr.query('FREQ:START '+str(min)+';*OPC?');
         #Set the max of the freq range
         self.instr.query('FREQ:STOP '+str(max)+';*OPC?');
 
     #if you set a high number you have to wait till the instrument execute at least navgs measure
-    def setAverage(self,navgs):
+    def set_average(self,navgs):
         #Set the number of average for every frequency
         navgs=round(abs(navgs))
         if(navgs>100):
             navgs=100
         self.instr.query('AVER:COUN '+str(navgs)+';*OPC?')
 
-    def getAverage(self):
+    def get_average(self):
         #Get the number of average 
         navgs=self.instr.query('AVER:COUN?')
         return navgs     
 
-    def setLogScale(self):
+    def set_log_scale(self):
 
         self.instr.query('CALC:FORMat MLOG;*OPC?')
 
-    def setLinScale(self):
+    def set_lin_scale(self):
         self.instr.query('CALC:FORMat MLIN;*OPC?')
 
-def IQtoS21(self,I,Q):
+def IQ_to_S21(self,I,Q):
     """
     Calculates S21 in dB, from its real I and imaginary Q parts
     """
