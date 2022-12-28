@@ -2,7 +2,7 @@ import pyvisa as visa
 import numpy as np
 import matplotlib.pyplot as plt
 
-class ManageInstrument:
+class ManageVNA:
     """
     This class allows creating an Object with:
     - Just one field "instr" that allows sending queries to the instrument: instr.query("<query in SCPI language>")
@@ -77,6 +77,31 @@ class ManageInstrument:
         
         return freq,I,Q
 
+    def multi_scan(self,fmin,fmax,powerdBm,npoints,navgs,nint):
+        fdist=(fmax-fmin)/nint   
+        fmin1=fmin-fdist
+
+        freq_vec=np.zeros(0)
+        I_vec=np.zeros(0)
+        Q_vec=np.zeros(0)
+
+        for i in np.arange(0,nint):
+            fmin1=fmin1+fdist
+            fmax1=fmin1+fdist
+            freq, I, Q = self.single_scan(fmin1,fmax1,powerdBm,npoints,navgs)
+            
+            freq_vec=np.append(freq_vec,freq[1:len(freq)])
+            I_vec=np.append(I_vec,I[1:len(I)])
+            Q_vec=np.append(Q_vec,Q[1:len(Q)])
+
+
+        freq_vec.flatten()
+        I_vec.flatten()
+        Q_vec.flatten()
+
+        return freq_vec,I_vec,Q_vec        
+
+
     def make_sweeps(self):
         # Clear the memory of the instrument (past sweeps measurements)
         self.instr.query('AVER:CLE;*OPC?')
@@ -120,19 +145,32 @@ class ManageInstrument:
         """
 
         # Read Y values
-        data = self.instr.query('CALC:DATA:FDAT?')
+        ydata = self.instr.query('CALC:DATA:FDAT?')
         # The result of the query above is a STRING containing values separated by "," (comma),
         # so we have to SPLIT the string into an array of values
-        data.Split(",")
+        ydata_vec = ydata.split(",")
+        ydata_vec[-1] = (ydata_vec[-1].split("\n"))[0]
+        Ydata_vec = np.zeros(len(ydata_vec))
+        for i in np.arange(0,len(ydata_vec)):
+            Ydata_vec[i] = float(ydata_vec[i])
+
+
+        
         
         # Read X values
         freq = self.instr.query('FREQuency:DATA?')
-        freq.Split(",")      
+        freq_vec = freq.split(",")
+        freq_vec[-1] = (freq_vec[-1].split("\n"))[0]
+        Freq_vec = np.zeros(len(freq_vec))
+        for i in np.arange(0,len(freq_vec)):
+            Freq_vec[i] = float(freq_vec[i])
 
+
+        
         # Wait
         self.instr.query('*OPC?')
 
-        return freq, data
+        return Freq_vec, Ydata_vec
 
     def set_mode(self,mode):
         # Select mode of instrument (NA or SA)
@@ -156,6 +194,8 @@ class ManageInstrument:
         if (npoints > 10001):
             npoints = 10001
         self.instr.query('SWE:POIN '+str(npoints)+';*OPC?')    
+
+    
 
     def set_power(self,powerdBm):
         # Set the output power of the segnal 
@@ -190,7 +230,7 @@ class ManageInstrument:
     def set_lin_scale(self):
         self.instr.query('CALC:FORMat MLIN;*OPC?')
 
-def IQ_to_S21(self,I,Q):
+def IQ_to_S21(I,Q):
     """
     Calculates S21 in dB, from its real I and imaginary Q parts
     """
