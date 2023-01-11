@@ -17,7 +17,7 @@ class ManageVNA:
         
         pass
 
-    def close(self, ip):
+    def close(self):
         """Close connection to instrument"""
         self.instr.close()
     
