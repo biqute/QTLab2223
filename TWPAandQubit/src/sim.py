@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class ManageSIM:
-    def __init__(self):
+    def __init__(self, resource):
         """Open connection to instrument"""
-        resource='ASRL34::INSTR'
+        
         rm = visa.ResourceManager()
         self.instr = rm.open_resource(resource)
         self.instr.query("*IDN ?\n")
