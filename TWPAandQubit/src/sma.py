@@ -9,7 +9,7 @@ class ManageSMA:
         """Open connection to instrument"""
 
         self.instr = RsInstrument(resource)
-        self.max_amplitude = -40    # [dBm] Max amplitude permitted to the user
+        self.max_amplitude = -30    # [dBm] Max amplitude permitted to the user
         
         pass
 
@@ -33,3 +33,6 @@ class ManageSMA:
             self.instr.write_str('SOURce1:POWer:LEVel:IMMediate:AMPLitude '+str(amplitude)) # e.g. -40[dBm]
         else:
             print("Set an amplitude < "+str(self.max_amplitude)+"dBm !")
+    
+    def set_output_off(self):
+        self.instr.write_str(':OUTPut1 OFF') 
