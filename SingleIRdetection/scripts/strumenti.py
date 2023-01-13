@@ -12,7 +12,7 @@ password = '--------'                    #Oscura quando carichi su GitHub
 context = ssl.create_default_context()
 
 #with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-#    server.login("mail@gmail.com", password)
+#    server.login("cryodudes23@gmail.com", password)
 
 class FridgeHandler:
     def __init__(self):
@@ -72,12 +72,18 @@ class FridgeHandler:
         self.execute(cmd)
         self.execute('A2')
         self.execute('T' + str(10*T))
+    
+    def send_mail(self)
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
+            server.login(sender_email, password)
+            server.sendmail(sender_email, receiver_email, message)
 
     def check_p(self):
         out = self.read_float < 2800 and self.read_float(15) < 2880
         if (not out):
             print("High pressure! O_O' ")
-            # self.send_alert_mail()
+            self.send_mail()
         return out  
     
     def check_T_stability(self, error, T, interval = 90, sleeptime = 5):
