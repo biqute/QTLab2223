@@ -12,7 +12,7 @@ password = '--------'                    #Oscura quando carichi su GitHub
 context = ssl.create_default_context()
 
 #with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-#    server.login("cryodudes23@gmail.com", password)
+#    server.login("mail@gmail.com", password)
 
 class FridgeHandler:
     def __init__(self):
@@ -72,18 +72,12 @@ class FridgeHandler:
         self.execute(cmd)
         self.execute('A2')
         self.execute('T' + str(10*T))
-    
-    def send_mail(self)
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
-            server.login(sender_email, password)
-            server.sendmail(sender_email, receiver_email, message)
 
     def check_p(self):
         out = self.read_float < 2800 and self.read_float(15) < 2880
         if (not out):
             print("High pressure! O_O' ")
-            self.send_mail()
+            # self.send_alert_mail()
         return out  
     
     def check_T_stability(self, error, T, interval = 90, sleeptime = 5):
@@ -93,10 +87,10 @@ class FridgeHandler:
         while counter < countermax:
             if self.check_p() == False or self.get_sensor() not in range(T-error, T+error):
                 counter = 0
-                sleep(interval*4)             
+                time.sleep(interval*4)             
             else:
                 counter += 1
-                sleep(sleeptime)         
+                time.sleep(sleeptime)         
         if counter == countermax:
             print("Temperature is stable and fridgeboy is ready!")
             out = True
@@ -109,9 +103,11 @@ class VNAHandler:
         self.inst = pyvisa.ResourceManager().open_resource('GPIB0::16::INSTR')
         self.inst.write('FORM2;')
         self.inst.write('S21;')
+        self.inst.read_termination = '\n'
+        self.inst.write_termination = '\n'
         print('VNA object created correctly')
 
-    def set_range_freq(self, start_f,stop_f):
+    def set_range_freq(self, start_f, stop_f):
         ''''Set the range of frequencies for the next scan from start_f to stop_f'''
         self.inst.write('LINFREQ;')
         self.inst.write('POIN 1601;')                       #set number of points
@@ -167,20 +163,22 @@ class VNAHandler:
             msg = 'DISPDDM;OUTPFORM'
         elif format == 'formatted data-memory':
             msg = 'DISPDMM;OUTPFORM'
-        return msg    
+        
+        self.inst.write(msg)  
 
     def get_data(self, format_data, format_out = 'formatted data'):
-        ''' swag '''
+        '''Get data of a certain type'''
         self.set_format(format_data)
-        self.inst.write(self.output_data_format(format_out))
+        self.output_data_format(format_out)
         
         self.inst.write('POIN?')
         num_points = int(float(self.inst.read('\n')))
         num_bytes = 8*int(num_points)+4
+        time.sleep(0.1)
         raw_bytes = self.inst.read_bytes(num_bytes)
 
         trimmed_bytes = raw_bytes[4:]
-        tipo='>'+str(2*num_points)+'f'
+        tipo = '>' + str(2*num_points) + 'f'
         x = struct.unpack(tipo, trimmed_bytes)
 
         amp_q = list(x)
@@ -191,7 +189,7 @@ class VNAHandler:
 
         plt.plot(amp_i, amp_q)
 
-        return amp_i
+        #return amp_i
 
 
 
