@@ -23,6 +23,7 @@ def measure(fridge, vna, temps, format_data):
 
     for t in temps:
         fridge.set_T(t)
+        # we need to add a sleep maybe? And how much?
         fridge.check_T_stability(t/10, t)
 
         i, q = vna.get_data(format_data)
@@ -64,14 +65,21 @@ class FridgeHandler:
         self.inst.write('$'+ str(cmd))
 
     def read(self, cmd):
-        out = self.inst.query_ascii_values(str(cmd), converter='s')
-        out = str.rstrip(out[0])
+        out = '?'
+        while '?' in out or 'E' in out:
+            out = self.inst.query_ascii_values(str(cmd), converter='s')
+            print(out)
+            out = str.rstrip(out[0])
+            print(out)
+        
         return out
 
     def get_sensor(self, cmd = 3):
-        '''Measure temperature or pressure of a sensor of the system. Default: MC temperature. '''                           
+        '''Measure temperature or pressure of a sensor of the system. Default: MC temperature.'''                           
         k = self.read('R' + str(cmd))
         k = k.replace("R+", "")
+        print(k)
+        #k = k.replace("?", "")
         return float(k)        
 
     def scan_T(self, cmd, interval, time):      # cmd -> command that specifies which temperature,
@@ -116,19 +124,23 @@ class FridgeHandler:
         self.execute('T' + str(10*T))
 
     def check_p(self):
-        out = self.read_float < 2800 and self.read_float(15) < 2880
+        out = self.get_sensor(14) < 10000 and self.get_sensor(15) < 100000  #!!!!!!!!!!! check the pressure values
         if (not out):
             print("High pressure! O_O' ")
             # self.send_alert_mail()
         return out  
 
 #Possiamo provare ad implementare un tempo dopo il quale, se la temperatura non è stabile, usciamo dal ciclo?    
-    def check_T_stability(self, error, T, interval = 90, sleeptime = 5):
-        self.set_T(T)
+    def check_T_stability(self, T, error, interval = 90, sleeptime = 5):    # T --> desired temperature
+                                                                            # error --> uncertainty allowed on the temperature
+                                                                            # interval --> minimum time of stability required
+                                                                            # sleeptime --> time interval between each check
+        #self.set_T(T)
         counter = 0
         countermax = int(interval/sleeptime)
         while counter < countermax:  
-            if self.check_p() == False or self.get_sensor() not in range(T-error, T+error):
+            if self.check_p() == False or (T-error < self.get_sensor(2) and self.get_sensor(2) < T+error): # check if values are ok
+                # change get_sensor parameters !!!!!!!!
                 counter = 0
                 time.sleep(interval*4) #sleeps for 6 minutes if T not stable         
             else:
