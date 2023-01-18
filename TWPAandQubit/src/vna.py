@@ -23,7 +23,7 @@ class ManageVNA:
     
     def get_id(self):
         """Get the name of the istrument"""
-        self.instr.query("*IDN?")
+        return self.instr.query("*IDN?")
 
     def reset(self):
         """Reset any query sent to the instrument"""
