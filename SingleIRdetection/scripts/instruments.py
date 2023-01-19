@@ -1,5 +1,7 @@
 # Contributo alla libreria che stiamo scrivendo per parlare con gli strumenti
 
+
+#fai funzione che manda mail se temperatura va oltre tot
 import pyvisa
 import numpy as np
 import time
@@ -7,43 +9,57 @@ import smtplib, ssl
 from matplotlib import pyplot as plt
 import struct
 
-port = 465                               # This port selects a high security protocol
-password = '--------'                    # Obscure when uploading on GitHub
-context = ssl.create_default_context()
 
 #with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
 #server.login("mail@gmail.com", password)
 
+def send_email( sender_email = 'fridgeboys23@gmail.com', receiver_email = 'l.mariani48@campus.unimib.it', message = 'Hey there! If you receive your message, it means that the function to send emails is working!'):
+    port = 465                               # This port selects a high security protocol
+    password = 'lb-/mus7z2rpYKz'                    # Obscure when uploading on GitHub
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
+        server.login("mail@gmail.com", password)
+        server.sendmail(sender_email, receiver_email, message)
+        return 0
+    
+
+
+
 def measure(fridge, vna, temps, format_data):
-    '''Outpus two matrices with dimensions num_points vs num_temperatures.
+    '''Outputs two matrices with dimensions num_points vs num_temperatures.
     The first contains the i values while the second contains the q values.'''
-    I = np.zeros(len(temps))
-    Q = np.zeros(len(temps))
+    num_points = vna.points
+    I = np.zeros((len(temps), num_points ))
+    Q = np.zeros((len(temps), num_points))
     j = 0
 
     for t in temps:
         fridge.set_T(t)
         # we need to add a sleep maybe? And how much?
-        fridge.check_T_stability(t/10, t)
-
-        i, q = vna.get_data(format_data)
-        I[j] = i
-        Q[j] = q
-        j += 1
+        ok = fridge.check_T_stability(t/10, t)
+        if ok == True:
+            i, q = vna.get_data(format_data)
+            I[j] = i
+            Q[j] = q
+            j += 1
+        else:
+            print ('I had some trouble with the stability of temperature ' + str(t))
+            break           #Fix this. you should find soething like an error return
+        f = vna.freqs
         
-    return I, Q
+    return I, Q, f
 
 def amp_phase(I, Q):
     '''Outputs two matrices with dimensions num_points vs num_temperatures.
-    The first contains the S_21 amplitude values while the second contains the S_21 phase values'''
+    The first contains the S_21 (??) amplitude values while the second contains the S_21 (??) phase values'''
     #a is the S_21 amplitude vector and p is the S_21 phases vector
     #A is the S_21 amplitude matrix and P is the S_21 phases matrix
 
     num_points = len(I[0]) # number of points i.e. usually 1601
     num_temps = len(I) # number of various temperatures
 
-    A = np.zeros(num_temps)
-    P = np.zeros(num_temps)
+    A = np.zeros(num_temps, num_points)
+    P = np.zeros(num_temps, num_points)
     a = np.zeros(num_points)
     p = np.zeros(num_points)
 
@@ -60,18 +76,18 @@ def amp_phase(I, Q):
 class FridgeHandler:
     def __init__(self):
         self.inst = pyvisa.ResourceManager().open_resource('ASRL1::INSTR')
+        print('Fridgeboy object created correctly!\n')
   
     def execute(self, cmd):
         self.inst.write('$'+ str(cmd))
 
-    def read(self, cmd):
+    def read(self, cmd):                #It may happen that the read command returns strange things with ?s and Es. In that case you can't trust the result
         out = '?'
-        while '?' in out or 'E' in out:
+        print(out)
+        while ('?' in out[0]) or ('E' in out[0]):
             out = self.inst.query_ascii_values(str(cmd), converter='s')
-            print(out)
-            out = str.rstrip(out[0])
-            print(out)
-        
+            print(out)       
+        out = str.rstrip(out[0])
         return out
 
     def get_sensor(self, cmd = 3):
@@ -79,7 +95,6 @@ class FridgeHandler:
         k = self.read('R' + str(cmd))
         k = k.replace("R+", "")
         print(k)
-        #k = k.replace("?", "")
         return float(k)        
 
     def scan_T(self, cmd, interval, time):      # cmd -> command that specifies which temperature,
@@ -103,7 +118,7 @@ class FridgeHandler:
         print(out)
     
     def set_T(self, T):
-        '''Set temperature to arbitrary value in 0.1 mK. 
+        '''Set temperature of the mixing chamber to arbitrary value in 0.1 mK. 
         Be careful! The value of temp has to be specified with 5 figures!
         Range is the command name for the power range (E1, E2 ...)'''
         
@@ -124,25 +139,25 @@ class FridgeHandler:
         self.execute('T' + str(10*T))
 
     def check_p(self):
-        out = self.get_sensor(14) < 10000 and self.get_sensor(15) < 100000  #!!!!!!!!!!! check the pressure values
+        out = self.get_sensor(14) < 100000 and self.get_sensor(15) < 1000000  #!!!!!!!!!!! check the pressure values
         if (not out):
             print("High pressure! O_O' ")
             # self.send_alert_mail()
         return out  
 
 #Possiamo provare ad implementare un tempo dopo il quale, se la temperatura non è stabile, usciamo dal ciclo?    
-    def check_T_stability(self, T, error, interval = 90, sleeptime = 5):    # T --> desired temperature
+    def check_T_stability(self, T, error, interval = 90, sleeptime = 5, pause = 300):    # T --> desired temperature
                                                                             # error --> uncertainty allowed on the temperature
-                                                                            # interval --> minimum time of stability required
-                                                                            # sleeptime --> time interval between each check
-        #self.set_T(T)
+                                                                            # interval --> minimum time of stability required. Defaults to 1 minute and half
+                                                                            # sleeptime --> time interval between each check. Defaults to 5 seconds
         counter = 0
         countermax = int(interval/sleeptime)
-        while counter < countermax:  
-            if self.check_p() == False or (T-error < self.get_sensor(2) and self.get_sensor(2) < T+error): # check if values are ok
-                # change get_sensor parameters !!!!!!!!
+        while counter < countermax: 
+            if self.check_p() == False or not (T-error < self.get_sensor(2) and self.get_sensor(2) < T + error): # check if values are ok
+                # change get_sensor parameters (actually remove them -> they'll default to mixing chamber) !!!!!!!!
                 counter = 0
-                time.sleep(interval*4) #sleeps for 6 minutes if T not stable         
+                print('I found a temperature value out of range. I am going to sleep for ' + str(pause) + ' seconds')
+                time.sleep(pause) #sleeps for 6 default minutes if T not stable         
             else:
                 counter += 1
                 time.sleep(sleeptime) #5 sec of sleep between each T check
@@ -159,14 +174,17 @@ class VNAHandler:
         self.inst.write('FORM2;')
         self.inst.write('CHAN1')
         self.inst.write('S21;')
-
         self.inst.write('POIN '+ str(num_points)+';')        #set number of points
-        self.points = num_points
-
         self.inst.read_termination = '\n'
         self.inst.write_termination = '\n'
-        print('VNA object created correctly\n')
-        print(self.points)
+
+        self.points = num_points
+
+        self.freqs = np.zeros(num_points)
+
+
+        print('VNA object created correctly!\n')
+        print('Default number of points for a sweep: ' + str(self.points))
 
     def set_range_freq(self, start_f, stop_f):
         ''''Set the range of frequencies for the next scan from start_f to stop_f'''
@@ -174,6 +192,7 @@ class VNAHandler:
         self.inst.write('STAR '+str(start_f)+' GHZ;')       #set start frequency
         self.inst.write('STOP '+str(stop_f)+' GHZ;')        #set stop frequency
         self.inst.write('CONT;')
+        self.freqs = np.linspace(start_f, stop_f, self.points)
 
     def beep(self):
             ''' Emit an interesting sound'''
