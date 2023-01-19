@@ -10,19 +10,19 @@ from matplotlib import pyplot as plt
 import struct
 
 
-#with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-#server.login("mail@gmail.com", password)
-
-def send_email( sender_email = 'fridgeboys23@gmail.com', receiver_email = 'l.mariani48@campus.unimib.it', message = 'Hey there! If you receive your message, it means that the function to send emails is working!'):
-    port = 465                               # This port selects a high security protocol
-    password = 'lb-/mus7z2rpYKz'                    # Obscure when uploading on GitHub
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-        server.login("mail@gmail.com", password)
-        server.sendmail(sender_email, receiver_email, message)
-        return 0
+def send_email_yahoo(fromMy , to, subj, message_text ):         #Be careful, the 'to' variable has to be an array. Put brackets even if it's a single address.
+    date = 1/1/2000
+    msg = "From: %s\nTo: %s\nSubject: %s\nDate: %s\n\n%s" % ( fromMy, to, subj, date, message_text )
+    password = str('xisjlsusnmsvkvyj')
+    server = smtplib.SMTP("smtp.mail.yahoo.com",587)
+    server.starttls()
+    password = str('########')  
+    server.login(fromMy,password)
+    for account in to:
+        server.sendmail(fromMy, account, msg)
+    server.quit()    
+    print ('ok the emails have been sent ')
     
-
 
 
 def measure(fridge, vna, temps, format_data):
