@@ -13,7 +13,7 @@ import struct
 def send_email_yahoo(fromMy , to, subj, message_text ):         #Be careful, the 'to' variable has to be an array. Put brackets even if it's a single address.
     date = 1/1/2000
     msg = "From: %s\nTo: %s\nSubject: %s\nDate: %s\n\n%s" % ( fromMy, to, subj, date, message_text )
-    password = str('xisjlsusnmsvkvyj')
+ 
     server = smtplib.SMTP("smtp.mail.yahoo.com",587)
     server.starttls()
     password = str('########')  
