@@ -10,20 +10,8 @@ from matplotlib import pyplot as plt
 import struct
 
 
-def send_email_yahoo(fromMy , to, subj, message_text ):         #Be careful, the 'to' variable has to be an array. Put brackets even if it's a single address.
-    date = 1/1/2000
-    msg = "From: %s\nTo: %s\nSubject: %s\nDate: %s\n\n%s" % ( fromMy, to, subj, date, message_text )
- 
-    server = smtplib.SMTP("smtp.mail.yahoo.com",587)
-    server.starttls()
-    password = str('########')  
-    server.login(fromMy,password)
-    for account in to:
-        server.sendmail(fromMy, account, msg)
-    server.quit()    
-    print ('ok the emails have been sent ')
-    
-
+#with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
+#server.login("mail@gmail.com", password)
 
 def measure(fridge, vna, temps, format_data):
     '''Outputs two matrices with dimensions num_points vs num_temperatures.
@@ -138,11 +126,25 @@ class FridgeHandler:
         self.execute('A2')
         self.execute('T' + str(10*T))
 
+    def send_email_yahoo(self, fromMy , to, subj, message_text ):         #Be careful, the 'to' variable has to be an array. Put brackets even if it's a single address.
+        date = 1/1/2000
+        msg = "From: %s\nTo: %s\nSubject: %s\nDate: %s\n\n%s" % ( fromMy, to, subj, date, message_text )
+ 
+        server = smtplib.SMTP("smtp.mail.yahoo.com",587)
+        server.starttls()
+        password = str('########')  
+        server.login(fromMy,password)
+        for account in to:
+            server.sendmail(fromMy, account, msg)
+        server.quit()    
+        print ('ok the emails have been sent ')
+
     def check_p(self):
         out = self.get_sensor(14) < 100000 and self.get_sensor(15) < 1000000  #!!!!!!!!!!! check the pressure values
         if (not out):
             print("High pressure! O_O' ")
-            # self.send_alert_mail()
+            self.send_email_yahoo("leomaria2906@yahoo.com",["l.mariani48@campus.unimib.it","a.angeloni3@campus.unimib.it",
+            "m.faggionato1@campus.unimib.it","marco.faverzani@unimib.it"],"High pressure!","la pressione è alta")
         return out  
 
 #Possiamo provare ad implementare un tempo dopo il quale, se la temperatura non è stabile, usciamo dal ciclo?    
