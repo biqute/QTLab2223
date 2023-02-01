@@ -81,9 +81,10 @@ class FridgeHandler:
     def get_sensor(self, cmd = 3):
         '''Measure temperature or pressure of a sensor of the system. Default: MC temperature.'''                           
         k = self.read('R' + str(cmd))
-        k = k.replace("R+", "")
-        print(k)
-        return float(k)        
+        k = k.replace("R", "")
+        k = k.replace("+", "")
+        k = float(k)
+        return k       
 
     def scan_T(self, cmd, interval, time):      # cmd -> command that specifies which temperature,
                                                 # interval -> time step to perform control
@@ -148,13 +149,21 @@ class FridgeHandler:
         return out  
 
 #Possiamo provare ad implementare un tempo dopo il quale, se la temperatura non è stabile, usciamo dal ciclo?    
-    def check_T_stability(self, T, error, interval = 90, sleeptime = 5, pause = 300):    # T --> desired temperature
+    def check_stability(self, T, error, interval = 90, sleeptime = 5, pause = 300):    # T --> desired temperature
                                                                             # error --> uncertainty allowed on the temperature
                                                                             # interval --> minimum time of stability required. Defaults to 1 minute and half
-                                                                            # sleeptime --> time interval between each check. Defaults to 5 seconds
+        t0 = time.time()                                                                    # sleeptime --> time interval between each check. Defaults to 5 seconds
         counter = 0
         countermax = int(interval/sleeptime)
-        while counter < countermax: 
+        while (counter < countermax) and (time.time() - t0 < 1801): 
+            if self.get_sensor(21) < 5:
+                self.send_email_yahoo("leomaria2906@yahoo.com",["l.mariani48@campus.unimib.it","a.angeloni3@campus.unimib.it",
+                "m.faggionato1@campus.unimib.it","marco.faverzani@unimib.it"],"Low pressure!","la pressione P2 è scesa sotto a 5") 
+                counter = countermax + 1                                                             
+            if self.get_sensor(2) > 22000:
+                self.send_email_yahoo("leomaria2906@yahoo.com",["l.mariani48@campus.unimib.it","a.angeloni3@campus.unimib.it",
+                "m.faggionato1@campus.unimib.it","marco.faverzani@unimib.it"],"High temperature!","la temperatura della 1 K Pot ha superato i 2.2K")
+                counter = countermax + 1
             if self.check_p() == False or not (T-error < self.get_sensor(2) and self.get_sensor(2) < T + error): # check if values are ok
                 # change get_sensor parameters (actually remove them -> they'll default to mixing chamber) !!!!!!!!
                 counter = 0
@@ -270,3 +279,33 @@ class VNAHandler:
         plt.plot(amp_i, amp_q)
 
         return amp_i, amp_q
+
+class FastGiorgio:
+    def __init__(self):
+        self.inst = pyvisa.ResourceManager().open_resource('ASRL25::INSTR')
+        print('Giorgio by Moroder listened correctly!\n')
+
+    def hex_freq_converter(self, num):
+        '''num is a frequency in MHz'''
+        
+        freq_mhz = num*10**9
+        freq_hex = hex(freq_mhz)
+        freq_hex = freq_hex.replace("0x","")
+        if len(freq_hex) == 10:
+            freq_hex = "00" + freq_hex
+        elif len(freq_hex) == 11:
+            freq_hex = "1" + freq_hex
+
+        return "0C" + freq_hex.upper()
+
+    def freq_sweep(self, star_freq, end_freq, num_points = 1601, power = 15, dtime = 200):
+        '''please give the frequency in MHz'''
+
+        star_freq_hex = self.hex_freq_converter(star_freq)  
+        end_freq_hex = self.hex_freq_converter(end_freq)
+
+        num_freq = np.linspace(star_freq, end_freq, num_points)
+
+        num_points_hex = hex(num_points).replace("0x","")
+        power_hex = "00" + hex(power).replace("0x","")      
+        dtime_hex = "00" + hex(dtime).replace("0x","")  
