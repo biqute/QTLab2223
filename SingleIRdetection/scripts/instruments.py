@@ -1,7 +1,5 @@
-# Contributo alla libreria che stiamo scrivendo per parlare con gli strumenti
+# Library for communication with the instruments
 
-
-#fai funzione che manda mail se temperatura va oltre tot
 import pyvisa
 import numpy as np
 import time
@@ -14,8 +12,9 @@ import struct
 #server.login("mail@gmail.com", password)
 
 def measure(fridge, vna, temps, format_data):
-    '''Outputs two matrices with dimensions num_points vs num_temperatures.
-    The first contains the i values while the second contains the q values.'''
+    '''Outputs two matrices with dimensions num_points (1601) vs num_temperatures.
+    The first contains the I values while the second contains the Q values.'''
+    
     num_points = vna.points
     I = np.zeros((len(temps), num_points ))
     Q = np.zeros((len(temps), num_points))
@@ -23,8 +22,8 @@ def measure(fridge, vna, temps, format_data):
 
     for t in temps:
         fridge.set_T(t)
-        # we need to add a sleep maybe? And how much?
-        ok = fridge.check_T_stability(t/10, t)
+        # Maybe we need to add a sleep? How long?
+        ok = fridge.check_stability(t/10, t)
         if ok == True:
             i, q = vna.get_data(format_data)
             I[j] = i
@@ -39,7 +38,7 @@ def measure(fridge, vna, temps, format_data):
 
 def amp_phase(I, Q):
     '''Outputs two matrices with dimensions num_points vs num_temperatures.
-    The first contains the S_21 (??) amplitude values while the second contains the S_21 (??) phase values'''
+    The first contains the S_21 amplitude values while the second contains the S_21 phase values.'''
     #a is the S_21 amplitude vector and p is the S_21 phases vector
     #A is the S_21 amplitude matrix and P is the S_21 phases matrix
 
@@ -60,16 +59,20 @@ def amp_phase(I, Q):
 
     return A, P
 
-
+# Class to communicate with the Gas Handler
 class FridgeHandler:
     def __init__(self):
         self.inst = pyvisa.ResourceManager().open_resource('ASRL1::INSTR')
         print('Fridgeboy object created correctly!\n')
   
     def execute(self, cmd):
+        '''Send a command to the instrument. 
+        This method automatically adds a '$' to make the string understandable for the instruments.'''
         self.inst.write('$'+ str(cmd))
 
-    def read(self, cmd):                #It may happen that the read command returns strange things with ?s and Es. In that case you can't trust the result
+    def read(self, cmd):
+        '''Read a value from the instrument. 
+        This method also checks if the output has a problem and if this is the case sends again the command.'''
         out = '?'
         print(out)
         while ('?' in out[0]) or ('E' in out[0]):
@@ -79,7 +82,8 @@ class FridgeHandler:
         return out
 
     def get_sensor(self, cmd = 3):
-        '''Measure temperature or pressure of a sensor of the system. Default: MC temperature.'''                           
+        '''Measure temperature or pressure of a sensor of the system. 
+        Default: MC temperature (R3).'''                           
         k = self.read('R' + str(cmd))
         k = k.replace("R", "")
         k = k.replace("+", "")
@@ -102,6 +106,7 @@ class FridgeHandler:
         return Temps
 
     def state(self):
+        '''Method that return the state of the instrument, i.e. the command 'X''''
         out = self.inst.query_ascii_values('X', converter='s')
         out = str.rstrip(out[0])
         print(out)
@@ -128,6 +133,7 @@ class FridgeHandler:
         self.execute('T' + str(10*T))
 
     def send_email_yahoo(self, fromMy , to, subj, message_text ):         #Be careful, the 'to' variable has to be an array. Put brackets even if it's a single address.
+        '''Method that send and e-mail.'''
         date = 1/1/2000
         msg = "From: %s\nTo: %s\nSubject: %s\nDate: %s\n\n%s" % ( fromMy, to, subj, date, message_text )
  
@@ -141,6 +147,7 @@ class FridgeHandler:
         print ('ok the emails have been sent ')
 
     def check_p(self):
+        '''Checks the pressure '''
         out = self.get_sensor(14) < 100000 and self.get_sensor(15) < 1000000  #!!!!!!!!!!! check the pressure values
         if (not out):
             print("High pressure! O_O' ")
