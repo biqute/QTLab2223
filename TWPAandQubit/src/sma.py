@@ -9,7 +9,7 @@ class ManageSMA:
         """Open connection to instrument"""
 
         self.instr = RsInstrument(resource)
-        self.max_amplitude = -10    # [dBm] Max amplitude permitted to the user
+        self.max_amplitude = 20    # [dBm] Max amplitude permitted to the user
         
         pass
 
