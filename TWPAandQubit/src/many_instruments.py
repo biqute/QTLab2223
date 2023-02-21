@@ -8,7 +8,7 @@ import sma
 import pyvisa
 from RsInstrument import *
 
-def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin, fmax, nfreqs, filename, npoints, navgs):
+def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin, fmax, nfreqs, filename, group, npoints, navgs):
     """
     Calculates S21 spectrum by consecutevly sending with the "sma" a frequency at the desired input power
     throught the line and measuring with the spectrum analyzer ("fsv") the peak heiht in the output signal
@@ -23,11 +23,11 @@ def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin,
 
 
     # Set the dataset name rule
-    dataset_name = str(float(fmin/1e9)) + "GHz_" + str(fmax/1e9) + "GHz_" + str(powerdBm) + "dBm"
+    full_dataset_name = group + "/" + str(float(fmin/1e9)) + "GHz_" + str(fmax/1e9) + "GHz_" + str(powerdBm) + "dBm"
 
     # Check if a dataset with the same name already exists
     hf = h5py.File(filename, 'r')
-    read_mat = hf.get(dataset_name)
+    read_mat = hf.get(full_dataset_name)
     hf.close()
     if read_mat is not None:
         sys.exit("Dataset già esistente!")
@@ -50,12 +50,12 @@ def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin,
     # Save S21dBm data
     hf = h5py.File(filename, 'a')
     mat = [freqs, S21dBm]
-    hf.create_dataset(dataset_name, data = mat)
+    hf.create_dataset(full_dataset_name, data = mat)
     hf.close()
 
     # Try to read the just written data
     hf = h5py.File(filename, 'r')
-    read_mat = hf.get(dataset_name)
+    read_mat = hf.get(full_dataset_name)
     read_freqs = read_mat[0]
     read_S21dBm = read_mat[1]
     datasets_list = [key for key in hf.keys()]
@@ -67,7 +67,7 @@ def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin,
     ax.set_xlabel('frequency [GHz]')
     ax.set_ylabel('S21 [dBm]')
     ax.grid(True)
-    plt.savefig(dataset_name)
+    plt.savefig(full_dataset_name)
     #plt.close(fig)
     plt.show()
 
