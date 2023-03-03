@@ -29,7 +29,7 @@ def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin,
     full_dataset_name = group + "/" + str(float(fmin/1e9)) + "GHz_" + str(fmax/1e9) + "GHz_" + str(powerdBm) + "dBm"
 
     # Check if a dataset with the same name already exists
-    hf = h5py.File(filename, 'r')
+    hf = h5py.File(filename, 'a')
     read_mat = hf.get(full_dataset_name)
     hf.close()
     if read_mat is not None:
@@ -39,13 +39,13 @@ def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin,
     freqs = np.linspace(fmin, fmax, nfreqs)
     peaks = np.zeros(len(freqs))
 
-    instrSMA.set_output_on()
+    instrSMA.set_output(1)
     for i in np.arange(nfreqs):
         instrSMA.set_freq(freqs[i])
         time.sleep(0.1)
         fs, output_powerdBm = instrFSV.single_scan(freqs[i]-50e6,freqs[i]+50e6,npoints,navgs)
         peaks[i] = np.max(output_powerdBm)
-    instrSMA.set_output_off()
+    instrSMA.set_output(0)
 
     # Calculate S21dBm
     S21dBm = peaks - powerdBm*np.ones(len(peaks))
@@ -70,7 +70,15 @@ def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin,
     ax.set_xlabel('frequency [GHz]')
     ax.set_ylabel('S21 [dBm]')
     ax.grid(True)
-    plt.savefig(full_dataset_name)
+    
+    # Figure path
+    temp_vec = full_dataset_name.split("/")
+    figname = temp_vec[len(temp_vec)-1] + ".png"
+
+    plt.savefig(figname)
+    plt.close(fig)
+    plt.show()
+    plt.clf()
     #plt.close(fig)
     plt.show()
 
