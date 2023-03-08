@@ -70,15 +70,7 @@ def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin,
     ax.set_xlabel('frequency [GHz]')
     ax.set_ylabel('S21 [dBm]')
     ax.grid(True)
-    
-    # Figure path
-    temp_vec = full_dataset_name.split("/")
-    figname = temp_vec[len(temp_vec)-1] + ".png"
-
-    plt.savefig(figname)
-    plt.close(fig)
-    plt.show()
-    plt.clf()
+    plt.savefig(full_dataset_name)
     #plt.close(fig)
     plt.show()
 
@@ -107,45 +99,59 @@ def acquire_S21(instrVNA: vna.ManageVNA,fmin,fmax,powerdBm,npoints,navgs,filenam
     
     # Perform the scan
     #freq, I, Q = instrVNA.single_scan(fmin,fmax,powerdBm,npoints,navgs)
-    freq, S21 = instrVNA.single_scan(fmin,fmax,powerdBm,npoints,navgs)
-    # Here we calculate the matrix element in dB, form its real and imaginary parts
-    #S21 = vna.IQ_to_S21(I,Q)
+    try:
+        freq, S21 = instrVNA.single_scan(fmin,fmax,powerdBm,npoints,navgs)
+        # Here we calculate the matrix element in dB, form its real and imaginary parts
+        #S21 = vna.IQ_to_S21(I,Q)
 
-    # Save S21dBm data
-    hf = h5py.File(filename, 'a')
-    mat = [freq, S21]
-    hf.create_dataset(full_dataset_name, data = mat)
-    hf.close()
+        # Save S21dBm data
+        hf = h5py.File(filename, 'a')
+        mat = [freq, S21]
+        hf.create_dataset(full_dataset_name, data = mat)
+        hf.close()
 
-    # Save (backup) data in a "per sè" file
-    t = round(time.time())
-    temp_filename = "backup/" + full_dataset_name.replace("/"," ") + ".h5"
-    hf = h5py.File(temp_filename, 'a')
-    mat = [freq, S21]
-    hf.create_dataset("time " + str(t), data = mat)
-    hf.close()
+        # Save (backup) data in a "per sè" file
+        t = round(time.time())
+        temp_filename = "backup/" + full_dataset_name.replace("/"," ") + ".h5"
+        hf = h5py.File(temp_filename, 'a')
+        mat = [freq, S21]
+        hf.create_dataset("time " + str(t), data = mat)
+        hf.close()
 
-    # Try to read the just written data
-    hf = h5py.File(filename, 'r')
-    read_mat = hf.get(full_dataset_name)
-    read_freqs = read_mat[0]
-    read_S21dBm = read_mat[1]
-    hf.close()
+        # Try to read the just written data
+        hf = h5py.File(filename, 'r')
+        read_mat = hf.get(full_dataset_name)
+        read_freqs = read_mat[0]
+        read_S21dBm = read_mat[1]
+        hf.close()
 
-    # Save picture of acquired data
-    if plot_fig == 1:
-        fig, ax = plt.subplots()
-        ax.plot(read_freqs/1e9, read_S21dBm)
-        ax.set_xlabel('frequency [GHz]')
-        ax.set_ylabel('S21 [dBm]')
-        ax.grid(True)
+        # Save picture of acquired data
+        if plot_fig == 1:
+            fig, ax = plt.subplots()
+            ax.plot(read_freqs/1e9, read_S21dBm)
+            ax.set_xlabel('frequency [GHz]')
+            ax.set_ylabel('S21 [dBm]')
+            ax.grid(True)
 
-        # Figure path
-        temp_vec = full_dataset_name.split("/")
-        figname = temp_vec[len(temp_vec)-1] + ".png"
+            # Figure path
+            temp_vec = full_dataset_name.split("/")
+            figname = temp_vec[len(temp_vec)-1] + ".png"
 
-        plt.savefig(figname)
-        plt.close(fig)
-        plt.show()
-        plt.clf()
-        return fig, ax
+            #plt.savefig(figname)
+            plt.close(fig)
+            plt.show()
+            plt.clf()
+            return fig, ax
+    except:
+        print("Single scan failed. Remaking it")
+        instrVNA.reset()
+        time.sleep(5)
+        instrVNA.set_mode("NA")
+        instrVNA.set_port("S21")
+        time.sleep(1)
+        
+        if plot_fig == 1:
+            fig, ax = acquire_S21(instrVNA,fmin,fmax,powerdBm,npoints,navgs,filename,group,plot_fig)
+            return fig, ax
+
+    
