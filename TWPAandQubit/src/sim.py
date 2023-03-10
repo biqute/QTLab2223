@@ -8,7 +8,6 @@ class ManageSIM:
         
         rm = visa.ResourceManager()
         self.instr = rm.open_resource(resource)
-        self.instr.timeout = 10e3
         self.instr.query("*IDN ?\n")
         self.instr.write('CONN '+str(4)+', "main_esc"')    #SIM928 it's installed on the 4° binary
         
@@ -23,25 +22,14 @@ class ManageSIM:
         
         if(value==0):                   #tunr off the output
          self.instr.write("OPOF")  
-         return 0
         if(value==1):                   #turn on the output
-         self.instr.write("OPON")
-         return 1
+         self.instr.query("OPON")
+
 
     def get_output(self):
-        temp_out = self.instr.query("EXON?")
-        temp_vec_out = temp_out.split("\r\n")
-        return temp_vec_out[0]
+        return self.instr.query("EXON?")
 
-    def get_voltage(self):
-        temp_out = self.instr.query("VOLT?")
-        temp_vec_out = temp_out.split("\r\n")
-        return temp_vec_out[0]        
-
-    def reset(self):
-        numbits = self.instr.write("*RST")
-        return numbits
-
+    
     def close(self):
         """Close connection to instrument"""
         self.instr.close()
