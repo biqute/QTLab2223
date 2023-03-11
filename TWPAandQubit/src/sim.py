@@ -8,38 +8,38 @@ class ManageSIM:
         
         rm = visa.ResourceManager()
         self.instr = rm.open_resource(resource)
-        self.instr.timeout = 10e3
-        self.instr.query("*IDN ?\n")
+        self.instr.timeout = 15e3
+        print(self.instr.query("*IDN ?\n"))
         self.instr.write('CONN '+str(4)+', "main_esc"')    #SIM928 it's installed on the 4° binary
         
         pass
 
     def set_voltage(self, value):
 
-        cmd = "VOLT "+str(value)        #Set voltage, "value" is in Volt
-        self.instr.write(cmd) 
+        cmd = "VOLT "+str(value) + ";*OPC?\n"        #Set voltage, "value" is in Volt
+        return self.instr.query(cmd) 
 
     def set_output(self,value):          #takes a value: 0 or 1
-        
         if(value==0):                   #tunr off the output
-         self.instr.write("OPOF")  
-         return 0
+         self.instr.query("OPOF;*OPC?\n")
         if(value==1):                   #turn on the output
-         self.instr.write("OPON")
-         return 1
+         self.instr.query("OPON;*OPC?\n")
+
+        # Check
+        return self.get_output()
 
     def get_output(self):
-        temp_out = self.instr.query("EXON?")
+        temp_out = self.instr.query("EXON?\n")
         temp_vec_out = temp_out.split("\r\n")
         return temp_vec_out[0]
 
     def get_voltage(self):
-        temp_out = self.instr.query("VOLT?")
+        temp_out = self.instr.query("VOLT?\n")
         temp_vec_out = temp_out.split("\r\n")
         return temp_vec_out[0]        
 
     def reset(self):
-        numbits = self.instr.write("*RST")
+        numbits = self.instr.write("*RST\n")
         return numbits
 
     def close(self):
