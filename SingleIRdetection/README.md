@@ -4,19 +4,15 @@ Laboratory class for the Master's degree in Physic at the University of Milano-B
 
 Some non - standard packages are being used. These are:
 
-```bash
-$\begin{itemize}
-\item cmath
-\item math
-\item iminuit
-\item time
-\item numpy
-\item h5py
-\item matplotlib
-\item scipy.special
-\item scipy.constants
-\end{itemize}$
-```
+- cmath
+- math
+- iminuit
+- time
+- numpy
+- h5py
+- matplotlib
+- scipy.special
+- scipy.constants
 
 
 The experience consists in detecting a single photon using mKIDs resonators on a chip in supersonducting regime. The first thing to do is to characterize our device, namely find the $\textbf{quality factor}$ of our resonators. In order to do so, we proceeded as illustrated in 
