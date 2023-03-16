@@ -16,6 +16,7 @@ $\begin{itemize}
 \item scipy.special
 \item scipy.constants
 \end{itemize}$
+```
 
 
 The experience consists in detecting a single photon using mKIDs resonators on a chip in supersonducting regime. The first thing to do is to characterize our device, namely find the $\textbf{quality factor}$ of our resonators. In order to do so, we proceeded as illustrated in 
