@@ -4,7 +4,7 @@ Laboratory class for the Master's degree in Physic at the University of Milano-B
 
 Some non - standard packages are being used. These are:
 
-```markdown
+```bash
 $\begin{itemize}
 \item cmath
 \item math
@@ -21,7 +21,7 @@ $\begin{itemize}
 
 The experience consists in detecting a single photon using mKIDs resonators on a chip in supersonducting regime. The first thing to do is to characterize our device, namely find the $\textbf{quality factor}$ of our resonators. In order to do so, we proceeded as illustrated in 
 ```bash
-QTLab2223/SingleIRdetection/notebooks/characterization.ipynb
+https://github.com/biqute/QTLab2223/SingleIRdetection/notebooks/characterization.ipynb
 ```
 
 ## Contributors
