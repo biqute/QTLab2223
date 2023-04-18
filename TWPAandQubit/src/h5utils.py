@@ -80,7 +80,7 @@ def getGroups(filename,group="/",shallprint=1):
             print("[" + str(i) + "]" + " " + groups[i] + "\n")
     return groups
 
-def plotDataset(filename, group="/", dataset_index = 0, xmin = float('-inf'), xmax = float('inf'), rescale_xaxis = 1, xlabel = "x", ylabel = "y"):
+def plotDataset(filename, group="/", dataset_index = 0, xmin = float('-inf'), xmax = float('inf'), rescale_xaxis = 1, xlabel = "x", ylabel = "y", groupoff = "", fitline = False, calc_ave = False):
     """
     Plot the specified dataset from the specified group.
     """
@@ -95,6 +95,18 @@ def plotDataset(filename, group="/", dataset_index = 0, xmin = float('-inf'), xm
     num = len(xs)
     hf.close()  # Note: dataset_mat is just a reference, so hf file must be close AFTER assigning freq and S21dBm!
     
+    # Retrieve Off data (if required)
+    if groupoff != "":
+        datasets = getDatasets(filename,groupoff,0)
+        hf = h5py.File(filename, 'r')
+        hfg = hf[groupoff]
+        dataset_mat = hfg.get(datasets[dataset_index])
+        ysoff = dataset_mat[1]
+        num = len(xs)
+        hf.close()
+        ys = ys - ysoff # Remove Off measure
+
+
     # Plot
     fig, ax = plt.subplots()
     i_min = max(round((xmin-xs[0])/((xs[num-1]-xs[0])/num)),0)
@@ -104,26 +116,44 @@ def plotDataset(filename, group="/", dataset_index = 0, xmin = float('-inf'), xm
     if i_min >= i_max:
         i_min = 0
         i_max = num - 1
+        xmin = xs[i_min]
+        xmax = xs[i_max]
         print("Invalid frequency span; Select\nxmin > ",xs[0]/rescale_xaxis," x ",rescale_xaxis,"\nxmax <",xs[num-1]/rescale_xaxis," x ",rescale_xaxis,"\n")
     
     ax.plot(xs[i_min:i_max]/rescale_xaxis, ys[i_min:i_max], label = str(datasets[dataset_index]))
+
+    # Fit (if required)
+    if fitline == True:
+        p, res, _, _, _ = np.polyfit(xs[i_min:i_max]/1e9,ys[i_min:i_max],1,full=True)
+        ax.plot(xs[i_min:i_max]/1e9,p[1]+p[0]*xs[i_min:i_max]/1e9, label = "Slope: " + str(round(p[0],3)) + " dBm/Ghz")
+
+    # Calculate Band Ave+-Std and put it in title (if required)
+    if calc_ave == True:
+        ave = np.mean(ys[i_min:i_max])
+        std = np.std(ys[i_min:i_max])
+    # Generate title
+    title = "Number of Points: " + str(i_max - i_min + 1)
+    if calc_ave == True:
+        title = title + "\nBand Average ["+ str(round(xmin/rescale_xaxis,3)) +", " + str(round(xmax/rescale_xaxis,3)) + "]GHz: "
+        title = title +  str(round(ave,3)) + "+-" + str(round(std,3)) + " dBm"
+    ax.set_title(title)
+
+
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    ax.set_title("Number of Points: " + str(i_max - i_min + 1))
     ax.grid(True)
     ax.legend()
-
     plt.show()
 
     return fig, ax
 
-def plotDatasetSpectrum(filename, group="/", dataset_index = 0, fmin = float('-inf'), fmax = float('inf'), rescale_xaxis = 1e9):
+def plotDatasetSpectrum(filename, group="/", dataset_index = 0, fmin = float('-inf'), fmax = float('inf'), rescale_xaxis = 1e9, groupoff = "", fitline = False, calc_ave = False):
     """
     Plot the specified dataset from the specified group,
     ASSUMING its a spectrum (S21 [dBm] vs. frequency [GHz])
     """
 
-    return plotDataset(filename,group,dataset_index,fmin,fmax,rescale_xaxis,"frequency [GHz]","S21 [dBm]")
+    return plotDataset(filename,group,dataset_index,fmin,fmax,rescale_xaxis,"frequency [GHz]","S21 [dBm]", groupoff = groupoff, fitline = fitline, calc_ave = calc_ave)
 
 def plotAllDatasets(filename, group="/", rescale_xaxis = 1, xlabel = "x", ylabel = "y"):
     """
@@ -148,7 +178,7 @@ def plotAllDatasets(filename, group="/", rescale_xaxis = 1, xlabel = "x", ylabel
     ax.grid(True)
     ax.legend()
 
-    plt.show()
+    #plt.show()
     hf.close()
 
     return fig, ax
