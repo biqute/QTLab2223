@@ -1,4 +1,5 @@
 import checkfile as cf
+import displog as dl
 #nukids_displog missing and necessary to be imported!
 
 def loadconfiguration(filename):
