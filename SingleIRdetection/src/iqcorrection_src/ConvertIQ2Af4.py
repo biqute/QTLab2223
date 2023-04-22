@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import sys
 
 import loadconfiguration as loadc
 import logconversion as logc
@@ -6,7 +8,7 @@ import getspectrafile as gsf
 import calkworkpoint as cwp
 import findmixcal as fmc
 import caliq as ciq
-import os
+import backgroundcalibration as bc
 
 def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, mode, nch,  datatype):
 
@@ -82,6 +84,11 @@ def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, 
 
     mixercalfile_ch = []
     mixer = []
+    background = np.zeros(nch)
+    s21xch = np.zeros(nch)
+    s21ych = np.zeros(nch)
+    f = np.zeros(nch)
+    qvalues = np.zeros(nch)
 
     for ii in range(nch)
         #Create the string path for mixercalibration. The "ii-th" entry of the
@@ -101,9 +108,78 @@ def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, 
 
         #Fit the background and return the fixed IQ loop
 
-        [background[ii], S21xch[ii], S21ych[ii], f[ii], Qvalues[ii]] = background_calibrationsc(IQfileheader_ch{ii}, mixer(ii), fmeas(ii));
+        [background[ii], s21xch[ii], s21ych[ii], f[ii], qvalues[ii]] = bc.BackgroundCalibration(iqfileheader_ch[ii], mixer[ii], fmeas[ii])
+
+        #Read and convert the pulse data files
+        fmax[ii] = -1000000
+        fmin[ii] = 1000000
+
+        amax[ii] = -1000000
+        amin[ii] = 1000000
 
 
+        a[ii] = []
+        bufamp[ii] = []
+        buffreq[ii] = []
+        bufpulse[ii] = []
+
+    original = sys.stdout
+    log = open(logpath, 'a')
+    sys.stdout = log
+    print('\nWritten Files\n')
+    sys.stdout = original
+    log.close()
+
+    for jj in range(len(file_names)):
+        #generate the read file name and open
+        fid = open(spectra_path + '/' + file_names[jj])
+
+        #generate the write file name and open
+        writefilename = save_path + str(file_names[jj][0:-5]) + '_proc' + str(file_names[jj][-4:-1])
+
+        #Write file on screen and on log file
+        fidwrite = open(writefilename, 'w')
+        log = open(logpath, 'a')
+        print(str(file_names[ii] + str(writefilename)))
+        sys.stdout = original
+        print(str(file_names[ii] + str(writefilename)))
+        log.close()
+
+        npoints = recordlength
+        hh = 0
+
+        while True:
+            line = fid.radline()
+
+            data = np.fromfile(fid, [2*nch, npoints], dataformat, 0, 'b')
+
+            if str(data):
+                #correct for the mixer - first remove the DC offsets.  We could either use
+                #the offset IQ scan or use the offsets found from the IQ calibration data
+                #5/2^15 is the ADC to volts scaling
+
+                idata = np.zeros(nch)
+                qdata = np.zeros(nch)
+                a = np.zeros(nch)
+
+                for ii in range(nch):
+                    idata[ii] = data[2*ii][:]
+                    #Idata{ii} = 5*Idata{ii}(:)/2^15;
+                    qdata[ii] = data[2*ii + 1][:]
+                    #Qdata{ii} = 5*Qdata{ii}(:)/2^15;
+
+                    if dataformat == 'int16':
+                        idata[ii] = np.multiply(adcconv, idata[ii][:]/(2**15))
+                        qdata[ii] = np.multiply(adcconv, qdata[ii][:]/(2**15))
+                    
+                    #apply a correction if it's needed (i.e. mode ~= 0)
+                    if mode != 0:
+                        [idata[ii], qdata[ii], t[ii]] = shift2pos(Idata{ii},Qdata{ii},IQfileheader_ch{ii},ii,hh,ii,posCh{ii});
+                        a[ii] = np.append(a[ii], np.sqrt(t[ii][0]**2 + t[ii][1]**2))
+
+
+
+    
 
     
     
