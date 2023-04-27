@@ -1,5 +1,6 @@
 import checkfile as cf
-import displog as dl
+import displog
+
 #nukids_displog missing and necessary to be imported!
 
 def loadconfiguration(filename):
@@ -21,7 +22,7 @@ def loadconfiguration(filename):
                 [configstr, comments] = tline.split('#')
                 [command, value] = configstr.split('=')
                 if(not value):
-                    dl.DispLog('In config file: "' + filename + '", command "' + command[0] + '" has no value')
+                    displog.DispLog('In config file: "' + filename + '", command "' + command[0] + '" has no value')
                     map = []
                     return map
                 if(not command[0]):
