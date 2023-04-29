@@ -1,12 +1,11 @@
 import os
 import sys
 import numpy as np
-import globalvariables
+import globvar
 
 def GetSpectraFile(key):
 
-    logpath = globalvariables.logpath
-
+    logpath = globvar.logpath
     out = []
     original = sys.stdout
 
@@ -37,14 +36,13 @@ def GetSpectraFile(key):
         sys.stdout = log  
         
         if (('out' in locals()) or ('out' in globals())):
-            print('get_spectra_file() OK spectra files found: ' + str(key) +'\n')
+            print('get_spectra_file(): OK spectra files found: ' + str(key) +'\n')
         
         else:
-            print('get_spectra_file() ERROR no spectra files found: ' + str(key) + '\n')
+            print('get_spectra_file(): ERROR no spectra files found: ' + str(key) + '\n')
             out=[]
 
-    
-    log.close()
+        log.close()
     sys.stdout = original
 
     return out

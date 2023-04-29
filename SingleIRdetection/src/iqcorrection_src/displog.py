@@ -1,6 +1,6 @@
 import sys
 import os
-from globalvariables import logpath
+from globvar import logpath
 
 def DispLog(message):
     

@@ -1,6 +1,6 @@
 import checkfile
-import displog
-import globalvariables
+from displog import DispLog
+import globvar
 
 #nukids_displog missing and necessary to be imported!
 
@@ -24,10 +24,10 @@ def LoadConfiguration(filename):
             #We don't want to read and store comments...
             [command, value] = tline.split('=')
             if(not value):
-                displog.DispLog('In config file: "' + filename + '", command "' + command[0] + '" has no value')
+                DispLog('In config file: "' + filename + '", command "' + command[0] + '" has no value')
                 map = []
             if(not command[0]):
-                displog.DispLog('In config file "' + filename + '" value "' + value[0] + '" has no command')
+                DispLog('In config file "' + filename + '" value "' + value[0] + '" has no command')
                 map = []
             if(command and value):
                 map.append([command, value])

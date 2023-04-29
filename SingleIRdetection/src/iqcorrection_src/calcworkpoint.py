@@ -2,7 +2,7 @@ import os
 import numpy as np
 from scipy import stats
 
-import globalvariables
+import globvar
 import loadiq as liq
 import evaluatepos as ep
 import mathfunctions as mathf
