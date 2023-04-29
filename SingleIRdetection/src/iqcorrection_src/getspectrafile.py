@@ -1,38 +1,50 @@
 import os
+import sys
+import numpy as np
+import globalvariables
 
 def GetSpectraFile(key):
 
-    global logpath
+    logpath = globalvariables.logpath
+
     out = []
+    original = sys.stdout
 
     #list is indeed a list of all directories in "key" path which begin with the character specified
     #default is set to any character
     list = os.listdir(key)
     #list = [f for f in list if f.startswith('.')]
-    list = str(list)
 
+    i = 0
     k = 0
-    out = ([[]]*len(list))
+    nonnull = 0
+    temp = (['null']*len(list))
 
     for i in range(len(list)):
         if((list[i].find('.hdr') == -1) and (list[i].find('time') == -1) and (list[i].find('.log') == -1)):
-            out[i-k] = list[i]
+            temp[i-k] = list[i]
+            nonnull = nonnull + 1
         else:
             k=k+1
+        
+    for jj in range(len(temp)):
+        if temp[jj] != 'null':
+            out.append(temp[jj])
 
-    print(list)
 
     if logpath:
-           
+        log = open(logpath, 'a')
+        sys.stdout = log  
+        
         if (('out' in locals()) or ('out' in globals())):
-            log = open(logpath, 'a+')
-            print(str(log) + 'get_spectra_file() OK spectra files found: ' + str(key) +'\n')
-            log.close()
+            print('get_spectra_file() OK spectra files found: ' + str(key) +'\n')
         
         else:
-            log = open(logpath, 'a+')
-            print(str(log) + 'get_spectra_file() ERROR no spectra files found: ' + str(key) + '\n')
-            log.close()
+            print('get_spectra_file() ERROR no spectra files found: ' + str(key) + '\n')
             out=[]
+
+    
+    log.close()
+    sys.stdout = original
 
     return out

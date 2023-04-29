@@ -5,28 +5,38 @@ import sys
 import loadconfiguration
 import logconversion as logc
 import getspectrafile as gsf
-import calkworkpoint as cwp
+import calcworkpoint as cwp
 import findmixcal as fmc
 import caliq as ciq
 import backgroundcalibration as bc
 import correctiq
 import correctiqbackground
 
-def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, mode, nch,  datatype):
+def ConvertIQ2Af4(run_num = 34, meas_num = 0, spectra_path = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\Data\\Spectra', iqpath = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\IQ', save_path = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\Save', iqheader = ['IQ0Ch1off', 'IQ0Ch2off'], mode = 0, nch = 2, datatype = 'MixCh'):
+
+    #Default settings block. Useful in order to debug the code.
+    spectra_path = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\Data\\Spectra'
+    run_num = 34
+    datatype = 'MixCh'
+    meas_num = 0
+    save_path = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\Save'
+    iqpath = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\IQ'
+    iqheader = ['IQ0Ch1off', 'IQ0Ch2off']
+    nch = 2
 
     global dataformat
     dataformat = 'int16'
     global recordlength
-    global  adcconv
+    global adcconv
 
-    config = loadconfiguration.LoadConfiguration(spectra_path + "/run" + str(run_num) + datatype + str(meas_num) + ".log")
+    config = loadconfiguration.LoadConfiguration(spectra_path + "\\run" + str(run_num) + '\\' + datatype + str(meas_num) + ".log")
 
-    recordlength = float(config[3][2])
-    adcconv = float(config[1][2])
-    samprate = float(config[2][2])
-    attenuations = [float(config[15][2]) + float(config[16][2])]
+    recordlength = float(config[2][1])
+    adcconv = float(config[0][1])
+    samprate = float(config[1][1])
+    attenuations = [float(config[14][1]) + float(config[15][1])]
 
-    #show how data have been arranged
+    #Show how data have been arranged
 
     print('Formato dati: ' + str(dataformat))
     print('Lunghezza record ' + str(recordlength))
@@ -34,24 +44,23 @@ def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, 
     #------------Search for all INPUT----------
 
     global checkpath
-    checkpath = save_path + r'\check_meas' + datatype + str(meas_num)
+    checkpath = save_path + '\\check_meas' + datatype + str(meas_num)
     global logpath
-    logpath = save_path + r'\run' + str(run_num) + datatype + str(meas_num) +'.log'
-    
+    logpath = save_path + '\\run' + str(run_num) + datatype + str(meas_num) +'.log'
+
     global nchan
     nchan = nch
 
-    #create directories in which data will be stored
+    #Create directories in which data will be stored
     os.mkdir(save_path)
     os.mkdir(checkpath)
 
-    #for each channel IQ data we declare a proper string
+    #For each channel IQ data we declare a proper string
     iqfileheader_ch = []
     for ii in range(nch):
         iqfileheader_ch.append(iqpath + str(iqheader[ii]))
-        i = i + 1
 
-    #create the list of spectra files. Note we use the symbol "/" instead of "\" for paths otherwise it wouldn't work
+    #Create the list of spectra files. Note we use the symbol "/" instead of "\" for paths otherwise it wouldn't work
     data_base_filename = spectra_path + 'r\run' + str(run_num) + datatype + str(meas_num) + '.'
     print('File root: ' + data_base_filename)
     file_names = gsf.GetSpectraFile(data_base_filename)
@@ -70,7 +79,7 @@ def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, 
     cal_mix_file = np.zeros(nch)
 
     for ii in range (nch):
-        [posch[ii], fmeas[ii]] = cwp.CalkWorkPoint(spectra_path +  file_names[0] +  recordlength[1 + 1] +  2*nch +  2*ii-1 +  2*ii +  iqfileheader_ch[ii] +  mode)
+        [posch[ii], fmeas[ii]] = cwp.CalcWorkPoint(spectra_path +  file_names[0] +  recordlength[1 + 1] +  2*nch +  2*ii-1 +  2*ii +  iqfileheader_ch[ii] +  mode)
         fmeas2[ii] = float(config[9 + ii][2])
         print('Frequency difference for the ' + str(ii) + '-th channel: ' + str(fmeas(ii)-fmeas2(ii)))
 
@@ -92,7 +101,7 @@ def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, 
     f = np.zeros(nch)
     qvalues = np.zeros(nch)
 
-    for ii in range(nch)
+    for ii in range(nch):
         #Create the string path for mixercalibration. The "ii-th" entry of the
         #object "mixercalfile_ch" is the path to the calibration file for the
         #"ii-th" channelà
@@ -261,7 +270,7 @@ def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, 
         
         fid.close()
         fidwrite.close()
-    
+
     original = sys.stdout
     log = open(logpath, 'a')
     print('\n----- DATA----')
@@ -279,61 +288,61 @@ def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, 
     print('\nshiftmins = ' + str(amin[0]) + str(fmin[0]) + str(amin[1]) + str(fmin[1]))
     print('\nshiftmaxs = ' + str(amax[0]) + str(fmax[0]) + str(amax[1]) + str(fmax[1]))
     log.close()
-    
+
     numfiles = len(file_names)
     np.save()
-numfiles = length(file_names)
-save([str(save_path) + '/run' + str(run_num) + datatype + str(meas_num) + '.mat'],'Qvalues','fmeas','run_num','meas_num','spectra_path','IQ_path','IQheader','cal_mix_file','mode','Nch','Recordlength','numfiles','ADCconv','SampRate','Attenuations')
-exts = ['.pdf', '.png']
-cmds = ['-dpdf', '-dpng']
+    numfiles = length(file_names)
+    save([str(save_path) + '/run' + str(run_num) + datatype + str(meas_num) + '.mat'],'Qvalues','fmeas','run_num','meas_num','spectra_path','IQ_path','IQheader','cal_mix_file','mode','Nch','Recordlength','numfiles','ADCconv','SampRate','Attenuations')
+    exts = ['.pdf', '.png']
+    cmds = ['-dpdf', '-dpng']
 
-'''              
-for ii=1:Nch
-for i=1:length(exts);
-    
+    '''              
+    for ii=1:Nch
+    for i=1:length(exts);
+
     kl=figure;
-    
-    
-  
-    
+
+
+
+
     plot(f{ii},sqrt(S21xch{ii}.^2+S21ych{ii}.^2));
     legend('S21 real');
     xlabel('Frequency');
     ylabel('quadraqture');
     print(kl,cmds{i},[checkpath,'/ResonanceCh',num2str(ii),exts{i}]);
-    
+
     kt=figure;
-    
- 
-    
-    
+
+
+
+
     plot(f{ii},atan(S21ych{ii}./S21xch{ii}));
     legend('S21 imaginary');
     xlabel('Frequency');
     ylabel('phase');
     print(kt,cmds{i},[checkpath,'/ResonanceCh',num2str(ii),exts{i}]);
-    
-    
-    
 
-    
-    
-    
+
+
+
+
+
+
     kk=figure;
-    
+
     plot( real( bufPulse{ii}) ,imag( bufPulse{ii}),'g');
     hold on
     plot(S21xch{ii},S21ych{ii},'r');
-     hold on
+        hold on
     plot(S21xch{ii}(1),S21ych{ii}(1),'o');
-    
+
     legend('Ch1 data','S21 corr','Low freq');
     xlabel('I normalized units');
     ylabel('Q normalized units');
     print(kk,cmds{i},[checkpath,'/CircleCh',num2str(ii),exts{i}]);
-    
+
     %%
-    
+
     if 0
         a=figure;
         plot( (1:length(amplitude_signal1)), amplitude_signal1);
@@ -376,9 +385,9 @@ for i=1:length(exts);
         print(ll,cmds{i},[checkpath,'/PulseFreqch1',exts{i}]);
         
     end
-    
-    
-    
+
+
+
     ler=figure;
     [AX,H1,H2] = plotyy((1:length(bufAmp{ii})), bufAmp{ii},1:length(bufFreq{ii}), bufFreq{ii});
     title( ['Data Af Ch',num2str(ii)]);
@@ -399,21 +408,21 @@ for i=1:length(exts);
     grid
     legend('Amplitude','Frequency Amplitude')
     print(ler,cmds{i},[checkpath,'/PulseCh',num2str(ii),exts{i}]);
-    
-    
-    
-end
-end
 
 
-disp('---------------End Conversion---------------------------------------------')
-% writenm=[save_path,'/RunStat'];
-% state=[meas_num curve1.a C1(:,1)' curve1.b C1(:,2)' curve1.c C1(:,3)'...
-%     curve2.a C2(:,1)' curve2.b C2(:,2)' curve2.c C2(:,3)' fmeas1 fmeas2]
-% 
-% dlmwrite(writenm, state, '-append')
-'''
-return
+
+    end
+    end
+
+
+    disp('---------------End Conversion---------------------------------------------')
+    % writenm=[save_path,'/RunStat'];
+    % state=[meas_num curve1.a C1(:,1)' curve1.b C1(:,2)' curve1.c C1(:,3)'...
+    %     curve2.a C2(:,1)' curve2.b C2(:,2)' curve2.c C2(:,3)' fmeas1 fmeas2]
+    % 
+    % dlmwrite(writenm, state, '-append')
+    '''
+    return
                         
                         
 

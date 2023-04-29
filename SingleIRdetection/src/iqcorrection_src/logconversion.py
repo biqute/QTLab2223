@@ -18,14 +18,10 @@
 import sys
 import os
 
-def logconversion(fmeas, run_num, meas_num, spectra_path, iqpath, iqheader, cal_mix_file, mode, nch, recordlength):
+def LogConversion(fmeas, run_num, meas_num, spectra_path, iqpath, iqheader, cal_mix_file, mode, nch, recordlength):
     global logpath
 
-    try:
-        logname = str(logpath)
-    except NameError:
-        logpath = str(os.getcwd() + '/logfile.log')
-        
+    logname = logpath        
     fid = open(logname +  'w')
     original_stdout = sys.stdout
     sys.stdout = fid 
