@@ -15,9 +15,11 @@ import numpy as np
 import sys
 import os
 
+import globvar
 
 def EvaluatePos(vect, percentage):
-    global logpath
+
+    logpath = globvar.logpath
 
     vect = np.array(vect)
     vect = np.sort(vect)
@@ -25,15 +27,11 @@ def EvaluatePos(vect, percentage):
     vect = vect[dell-1: len(vect) - dell]
     pos = round(np.mean(vect))
     lndev = np.abs(np.array(vect - pos))
-
-    try:
-        logpath
-    except NameError:
-        logpath = str(os.getcwd() + '/logfile.log')
-        
-    fid = open(logpath, 'a')
-    original_stdout = sys.stdout
-    sys.stdout = fid  #Change the standard output to the file we created.
+    
+    if logpath:
+        fid = open(logpath, 'a')
+        original_stdout = sys.stdout
+        sys.stdout = fid  #Change the standard output to the file we created.
 
     if np.mean(lndev) > 0.5:
         print('- EvaluatePos(): ERROR: working point frequency is unstable: ' + str(np.mean(lndev)))

@@ -20,7 +20,8 @@ def GetSpectraFile(key):
     temp = (['null']*len(list))
 
     for i in range(len(list)):
-        if((list[i].find('.hdr') == -1) and (list[i].find('time') == -1) and (list[i].find('.log') == -1)):
+        #if((list[i].find('.hdr') == -1) and (list[i].find('time') == -1) and (list[i].find('.log') == -1)):  #(?)
+        if((list[i].find('.hdr') == -1) and (list[i].find('.log') == -1) and (list[i].find('spectra') == -1)):
             temp[i-k] = list[i]
             nonnull = nonnull + 1
         else:
@@ -36,13 +37,14 @@ def GetSpectraFile(key):
         sys.stdout = log  
         
         if (('out' in locals()) or ('out' in globals())):
-            print('get_spectra_file(): OK spectra files found: ' + str(key) +'\n')
+            print('- GetSpectraFile(): OK spectra files found: ' + str(key) +'\n')
         
         else:
-            print('get_spectra_file(): ERROR no spectra files found: ' + str(key) + '\n')
+            print('- GetSpectraFile(): ERROR no spectra files found: ' + str(key) + '\n')
             out=[]
 
         log.close()
+
     sys.stdout = original
 
     return out

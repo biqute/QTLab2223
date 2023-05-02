@@ -10,22 +10,37 @@
 #----------------------------------------------
 
 import numpy as np
-import getspectrafile as gsf
-def FindMixCal(frequency, path, channel):
-    data_base_filename = path + 'MixCh'+ str(channel)
+from getspectrafile import GetSpectraFile
+import sys
 
-    #Following the same rout as for "ConvertIQ2Af4.py" we use the function GetSpectraFile in order
+import globvar
+
+def FindMixCal(frequency, path, channel):
+
+    logpath = globvar.logpath
+    
+    #'\\MixCh'+ str(channel)
+
+    #Following the same route as for "ConvertIQ2Af4.py" we use the function GetSpectraFile in order
     #to retrieve all spectra file names
 
-    file_names = gsf.GetSpectraFile(data_base_filename)
+    file_names = GetSpectraFile(path)
 
     diff = 10e10
     for ii in range(len(file_names)):
-        freqcal = float(file_names[ii][-13:-4])
+        freqcal = float(file_names[ii][-14:-4])
 
-        if np.abs(freqcal - frequency) < diff:
+        if np.abs(freqcal - frequency) <= diff: #<= is here only to let this workout for the given data, it should be '<'
             file = file_names[ii]
             diff = np.abs(freqcal - frequency)
-        
-    print(' - FindMixCal(): OK: frequency difference for the ' + str(channel) + '-th channel and mixer calibration: ' + str(frequency - float(file[-13:-4])))
+    
+    if logpath:
+        fid = open(logpath, 'a')
+        original_output = sys.stdout
+        sys.stdout = fid
+        print(file[-14:-4])
+        print(' - FindMixCal(): OK: frequency difference for the ' + str(channel) + '-th channel and mixer calibration: ' + str(frequency - float(file[-14:-4])))
+        sys.stdout = original_output
+        fid.close()
+
     return file

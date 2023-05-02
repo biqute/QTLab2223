@@ -25,8 +25,8 @@ run_num = 34
 datatype = 'MixCh'
 meas_num = 1
 save_path = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\Save'
-iqpath = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\IQ'
-iqheader = ['IQ0Ch1off', 'IQ0Ch2off']
+iqpath = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\IQ' + '\\run' + str(run_num) + '\\'
+iqheader = ['IQ0Ch1', 'IQ0Ch2']
 nch = 2
 mode = 0
 
@@ -82,24 +82,24 @@ if not file_names:
     print('Error: no spectra file found')
 
 #let's see the first and the final file retrieved
-print('First file: ' + str(file_names[0]))
-print('Last file: ' + str(file_names[-1]))
+print('(file_names) First file: ' + str(file_names[0]))
+print('(file_names) Last file: ' + str(file_names[-1]))
 
 #we now want to compute the WorkPoint frequency
 posch = np.zeros(nch)
 fmeas = np.zeros(nch)
 fmeas2 = np.zeros(nch)
-cal_mix_file = np.zeros(nch)
+cal_mix_file = ([[]]*nch)
 
 for ii in range (nch):
-    [posch[ii], fmeas[ii]] = CalcWorkPoint(spectra_path +  file_names[0] + recordlength[1 + 1] +  2*nch +  2*ii-1 +  2*ii +  iqfileheader_ch[ii] +  mode)
-    fmeas2[ii] = float(config[9 + ii][2])
-    print('Frequency difference for the ' + str(ii) + '-th channel: ' + str(fmeas(ii)-fmeas2(ii)))
+    [posch[ii], fmeas[ii]] = CalcWorkPoint(data_base_filename + file_names[0], recordlength, 2*nch, 2*ii, 2*ii+1, iqfileheader_ch[ii], mode)
+    fmeas2[ii] = float(config[10 + ii][1])
+    print('Frequency difference for the ' + str(ii) + '-th channel: ' + str(fmeas[ii]-fmeas2[ii]))
 
     #Find mixer calibration file closest to the frequency working point
-    cal_mix_file[ii] = fmc.FindMixCal(fmeas(ii) + spectra_path + ii)
-    print('Signal frequency for the ' + str(ii) + '-th channel probe: ' + str(fmeas(ii)))
-    print('Calibration file for the ' + str(ii) + '-th channel mixer: ' + str(cal_mix_file))
+    cal_mix_file[ii] = FindMixCal(fmeas[ii], spectra_path + '\\run' + str(run_num), ii + 1)
+    print('Signal frequency for the ' + str(ii + 1) + '-th channel probe: ' + str(fmeas[ii]))
+    print('Calibration file for the ' + str(ii + 1) + '-th channel mixer: ' + str(cal_mix_file[ii]))
 
     #Now ALL input are defined. It's possible to create the log file. The function "logconversion" recalls the 
     #matlab script "logconversion2.m" +  probably an updated version of the original "logconversion.m".
