@@ -27,18 +27,20 @@ def FindMixCal(frequency, path, channel):
     file_names = GetSpectraFile(path)
 
     diff = 10e10
-    for ii in range(len(file_names)):
-        freqcal = float(file_names[ii][-14:-4])
 
-        if np.abs(freqcal - frequency) <= diff: #<= is here only to let this workout for the given data, it should be '<'
-            file = file_names[ii]
-            diff = np.abs(freqcal - frequency)
+    for ii in range(len(file_names)):   #check later?
+        
+        if(file_names[ii].find('spectra') == -1):
+            freqcal = float(file_names[ii][-14:-4])
+
+            if np.abs(freqcal - frequency) <= diff: #<= is here only to let this workout for the given data, it should be '<'
+                file = file_names[ii]
+                diff = np.abs(freqcal - frequency)
     
     if logpath:
         fid = open(logpath, 'a')
         original_output = sys.stdout
         sys.stdout = fid
-        print(file[-14:-4])
         print(' - FindMixCal(): OK: frequency difference for the ' + str(channel) + '-th channel and mixer calibration: ' + str(frequency - float(file[-14:-4])))
         sys.stdout = original_output
         fid.close()

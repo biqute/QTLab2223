@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from scipy import stats
+from matplotlib import pyplot as plt
 
 import globvar
 from loadiq import LoadIQ
@@ -8,7 +9,7 @@ from evaluatepos import EvaluatePos
 from mathfunctions import MinColumnWise, MaxColumnWise
 
 
-def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode):
+def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode, ifplot):
     # Calcolate working point frequency and eventually correct it.
     # 2 possible modes:
     # 
@@ -58,16 +59,16 @@ def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode):
                 qdata1 = data[colq, :]
                 signalq = np.ravel(qdata1.T)
             
-            avg = stats.trim_mean(idata1, 0.5)
+            avg = stats.trim_mean(idata1, 0.25)
             #Detect baseline by using max trigger
             [minf1, posf1] = MaxColumnWise(np.abs(idata1 - avg))
 
             if (posf1/npoints > 0.25):
-                noisei = signali[0:bb]
-                noiseq = signalq[0:bb]
+                noisei = signali[0:bb-1]
+                noiseq = signalq[0:bb-1]
             else:
-                noisei = signali[npoints-bb:npoints]
-                noiseq = signalq[npoints-bb:npoints]
+                noisei = signali[npoints-bb-1:npoints]
+                noiseq = signalq[npoints-bb-1:npoints]
             
             b = np.mean(noisei)
             c = np.mean(noiseq)
@@ -75,8 +76,18 @@ def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode):
             [min, pos] = MinColumnWise((idata-b)**2+(qdata-c)**2)
             posbuff = np.append(posbuff, pos)
 
+            if ifplot == 1:
+                
+                #plt.plot(signali, signalq, 'g')
+                plt.plot(idata, qdata, 'r')
+                plt.plot(idata[pos], qdata[pos], 'o')
+                plt.show()
+
     pos = EvaluatePos(posbuff, 20)
     fmeas = f[pos]
+
+
+    #inserire plot!!! Questa funzione serve per plottare....
 
     #if mode == 2:
     #[pos,fmeas]= dm.DataMatcher( file_name,IQfileheader,npoints,ncol,colI,colQ);

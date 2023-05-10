@@ -1,7 +1,7 @@
 import numpy as np
 
 def MaxColumnWise(matrix):
-    max_val = np.amax(matrix, axis = 0)
+    max_val = np.max(matrix, axis = 0)
     max_pos = np.argmax(matrix, axis = 0)
     return [max_val, max_pos]
 

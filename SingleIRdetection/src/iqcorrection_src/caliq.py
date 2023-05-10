@@ -1,6 +1,12 @@
 import math
 import numpy as np
-import ellipsefit as ef
+
+import globvar
+from matplotlib import pyplot as plt
+import ellipsefit2
+from ellipsefit import EllipseFit
+from readbinarydata import ReadBinaryData
+from correctiq import CorrectIQ
 
 class Mixer:
     Gamma = 0
@@ -32,13 +38,14 @@ def Cal_IQ(filename, ncol, xcol, ycol, ifplot, cal_mix_file, nch):
     #       .AQ     Q quadrature gain
     #       .gamma  phase between quadratures
 
-    global checkpath
-    [idata, qdata] = readbinarydata(filename, ncol, xcol, ycol, 0, inf) #(?)
+    checkpath = globvar.checkpath
+    recordlength = globvar.recordlength
+    [idata, qdata] = ReadBinaryData(filename, ncol, xcol, ycol, 0, recordlength) #(?)
 
     #Funcition "ellipse_fit" fits the ellipse and returns the parameters
     #for the best fit (in "Least Squares" terms)
 
-    [semimajor_axis, semiminor_axis, i0, q0, phi] = ef.EllipseFit(idata, qdata)
+    [semimajor_axis, semiminor_axis, i0, q0, phi] = EllipseFit(idata, qdata)
     a = semimajor_axis
     b = semiminor_axis
 
@@ -46,7 +53,7 @@ def Cal_IQ(filename, ncol, xcol, ycol, ifplot, cal_mix_file, nch):
 
     ai = math.sqrt(a**2*math.cos(phi)**2 + b**2*math.sin(phi)**2)
     aq = math.sqrt(a**2*math.sin(phi)**2 + b**2*math.cos(phi)**2)
-    alpha1 = math.atan((b*math.sin(phi)/(a*cos(phi))))
+    alpha1 = math.atan((b*math.sin(phi)/(a*math.cos(phi))))
     alpha2 = math.pi - math.atan((b*math.cos(phi))/(a*math.sin(phi)))
     gamma = alpha1 - alpha2
 
@@ -60,23 +67,20 @@ def Cal_IQ(filename, ncol, xcol, ycol, ifplot, cal_mix_file, nch):
     mixer.I0 = i0
     mixer.Q0 = q0 
 
-    [icor, qcor] = Correct_IQ(idata - i0, qdata - q0, mixer)
+    [icor, qcor] = CorrectIQ(idata - i0, qdata - q0, mixer)
 
     amp = np.mean(math.sqrt(np.square(np.array(icor)) + np.square(np.array(qcor))))
     mixer.Amp = amp
 
-    #if ifplot
-        #x = AI * cos( th);
-        #y = AQ * cos( th + gamma);
-        #plot( I0 + x, Q0 + y, 'r')
+    if ifplot == 1:
+        x = ai * math.cos(th)
+        y = aq * math.cos(th + gamma)
+        plt.plot(i0 + x, q0 + y, 'r')#hold on
+        plt.plot( icor + i0, qcor + q0, 'g')
+        plt.legend('Mixer output','Elipse fit','corrected IQ')
 
-        #hold on
-        #plot( Icor + I0, Qcor + Q0, 'g')
-        #legend('Mixer output','Elipse fit','corrected IQ');
-        #grid
         #print(h,'-dpdf',[checkpath,'/',cal_mix_file,'.pdf']);
         #print(h,'-dpng',[checkpath,'/',cal_mix_file,'.png']);
-    #end
 
     return mixer
     

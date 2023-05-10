@@ -15,7 +15,7 @@ def CorrectIQ(idata, qdata, mixer):
 
     ai = mixer.AI
     aq = mixer.AQ
-    gamma = mixer.gamma
+    gamma = mixer.Gamma
 
     g = np.divide(ai*qdata, aq*idata)
     theta = 0*idata

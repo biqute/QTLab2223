@@ -18,11 +18,12 @@
 import sys
 import os
 
-def LogConversion(fmeas, run_num, meas_num, spectra_path, iqpath, iqheader, cal_mix_file, mode, nch, recordlength):
-    global logpath
+import globvar
 
-    logname = logpath        
-    fid = open(logname +  'w')
+def LogConversion(fmeas, run_num, meas_num, spectra_path, iqpath, iqheader, cal_mix_file, mode, nch, recordlength):
+    
+    logname = globvar.logpath        
+    fid = open(logname, 'a')
     original_stdout = sys.stdout
     sys.stdout = fid 
     
@@ -39,8 +40,6 @@ def LogConversion(fmeas, run_num, meas_num, spectra_path, iqpath, iqheader, cal_
         print('IQ header: ' + str(iqheader[ii]))
         print('Frequency: ' + str(fmeas[ii]))
 
+    print('CHECKS: ') #(?)
     sys.stdout = original_stdout
-
-    print('CHECKS') #(?)
-    
     fid.close()
