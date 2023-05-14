@@ -33,7 +33,7 @@ def FindMixCal(frequency, path, channel):
         if(file_names[ii].find('spectra') == -1):
             freqcal = float(file_names[ii][-14:-4])
 
-            if np.abs(freqcal - frequency) <= diff: #<= is here only to let this workout for the given data, it should be '<'
+            if np.abs(freqcal - frequency) < diff: #<= is here only to let this workout for the given data, it should be '<'
                 file = file_names[ii]
                 diff = np.abs(freqcal - frequency)
     

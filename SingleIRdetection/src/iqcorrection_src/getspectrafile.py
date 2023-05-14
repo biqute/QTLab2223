@@ -20,7 +20,7 @@ def GetSpectraFile(key):
     temp = (['null']*len(list))
 
     for i in range(len(list)):
-        if((list[i].find('.hdr') == -1) and (list[i].find('time') == -1) and (list[i].find('.log') == -1)):
+        if((list[i].find('.hdr') == -1) and (list[i].find('time') == -1) and (list[i].find('.log') == -1) and (list[i].find('.bin') == -1)):
             temp[i-k] = list[i]
             nonnull = nonnull + 1
         else:

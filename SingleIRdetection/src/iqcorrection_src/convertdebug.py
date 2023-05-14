@@ -14,7 +14,7 @@ from shift2pos import Shift2Pos
 from backgroundcalibration import BackgroundCalibration
 from correctiq import CorrectIQ
 from correctiqbackground import CorrectIQBackground
-from readbinarydata import ReadBinaryData
+from readdata import ReadData
 
 #All our globally defined variables are stored in "globalvariables.py". This ensures the code does not encounter cyclic definition of variables 
 #and thus ensures stability.

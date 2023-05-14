@@ -7,6 +7,7 @@ import globvar
 from loadiq import LoadIQ
 from evaluatepos import EvaluatePos
 from mathfunctions import MinColumnWise, MaxColumnWise
+from readdata import ReadData
 
 
 def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode, ifplot):
@@ -19,6 +20,7 @@ def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode, ifpl
     adcconv = globvar.adcconv
     checkpath = globvar.checkpath
     dataformat = globvar.dataformat
+    recordlength = globvar.recordlength
 
     #print('adcconv = ' + str(adcconv))
 
@@ -31,8 +33,7 @@ def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode, ifpl
         [f, idata, qdata] = LoadIQ(iqfileheader + '_')
         posbuff = []
 
-        data = np.array(np.fromfile(fid, dtype = '>i2'))
-        data = data.reshape([ncol, npoints])
+        [idata1, qdata1] = ReadData(file_name, ncol, coli, colq, 0, recordlength)
 
         #for jj in range(200):  #(?)
 
@@ -42,46 +43,42 @@ def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode, ifpl
 
         #print(data.shape[1])
 
-        if np.shape(data)[1] == npoints:
+        #if (len(idata1) == npoints and len(qdata1) == npoints):
 
-            #Correct for the mixer - first remove the DC offsets.  We could either use
-            #the offset IQ scan or use the offsets found from the IQ calibration data
-            #5/2^15 is the ADC to volts scaling
+        #Correct for the mixer - first remove the DC offsets.  We could either use
+        #the offset IQ scan or use the offsets found from the IQ calibration data
+        #5/2^15 is the ADC to volts scaling
 
-            if (dataformat == 'int16'):
-                idata1 = data[coli, :]
-                signali = adcconv*(np.ravel(idata1.T))/(2**15)
-                qdata1 = data[colq, :]
-                signalq = adcconv*(np.ravel(qdata1.T))/(2**15)
-            else:
-                idata1 = data[coli, :]
-                signali = np.ravel(idata1.T)
-                qdata1 = data[colq, :]
-                signalq = np.ravel(qdata1.T)
+        if (dataformat == 'int16'):
+            signali = adcconv*idata1/(2**15)
+            signalq = adcconv*qdata1/(2**15)
+        else:
+            signali = idata1
+            signalq = qdata1
+        
+        avg = stats.trim_mean(idata1, 0.25)
+        #Detect baseline by using max trigger
+        [minf1, posf1] = MaxColumnWise(np.abs(idata1 - avg))
+
+        if (posf1/npoints > 0.25):
+            noisei = signali[0:bb-1]
+            noiseq = signalq[0:bb-1]
+        else:
+            noisei = signali[npoints-bb-1:npoints]
+            noiseq = signalq[npoints-bb-1:npoints]
+        
+        b = np.mean(noisei)
+        c = np.mean(noiseq)
+
+        [min, pos] = MinColumnWise((idata-b)**2+(qdata-c)**2)
+        posbuff = np.append(posbuff, pos)
+
+        if ifplot == 1:
             
-            avg = stats.trim_mean(idata1, 0.25)
-            #Detect baseline by using max trigger
-            [minf1, posf1] = MaxColumnWise(np.abs(idata1 - avg))
-
-            if (posf1/npoints > 0.25):
-                noisei = signali[0:bb-1]
-                noiseq = signalq[0:bb-1]
-            else:
-                noisei = signali[npoints-bb-1:npoints]
-                noiseq = signalq[npoints-bb-1:npoints]
-            
-            b = np.mean(noisei)
-            c = np.mean(noiseq)
-
-            [min, pos] = MinColumnWise((idata-b)**2+(qdata-c)**2)
-            posbuff = np.append(posbuff, pos)
-
-            if ifplot == 1:
-                
-                #plt.plot(signali, signalq, 'g')
-                plt.plot(idata, qdata, 'r')
-                plt.plot(idata[pos], qdata[pos], 'o')
-                plt.show()
+            plt.plot(signali, signalq, 'g')
+            #plt.plot(idata, qdata, 'r')
+            #plt.plot(idata[pos], qdata[pos], 'o')
+            plt.show()
 
     pos = EvaluatePos(posbuff, 20)
     fmeas = f[pos]

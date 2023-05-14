@@ -5,7 +5,7 @@ import globvar
 from matplotlib import pyplot as plt
 import ellipsefit2
 from ellipsefit import EllipseFit
-from readbinarydata import ReadBinaryData
+from readdata import ReadData
 from correctiq import CorrectIQ
 
 class Mixer:
@@ -40,7 +40,7 @@ def Cal_IQ(filename, ncol, xcol, ycol, ifplot, cal_mix_file, nch):
 
     checkpath = globvar.checkpath
     recordlength = globvar.recordlength
-    [idata, qdata] = ReadBinaryData(filename, ncol, xcol, ycol, 0, recordlength) #(?)
+    [idata, qdata] = ReadData(filename, ncol, xcol, ycol, 0, recordlength) 
 
     #Funcition "ellipse_fit" fits the ellipse and returns the parameters
     #for the best fit (in "Least Squares" terms)
