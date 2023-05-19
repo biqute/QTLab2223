@@ -28,6 +28,7 @@ def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode, ifpl
     ncol = int(ncol)
 
     if (mode == 0 or mode == 1):
+
         fid = open(file_name)
         bb = np.int32(round(npoints/5))
         [f, idata, qdata] = LoadIQ(iqfileheader + '_')
@@ -57,6 +58,7 @@ def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode, ifpl
             signalq = qdata1
         
         avg = stats.trim_mean(idata1, 0.25)
+
         #Detect baseline by using max trigger
         [minf1, posf1] = MaxColumnWise(np.abs(idata1 - avg))
 
@@ -74,17 +76,15 @@ def CalcWorkPoint(file_name, npoints, ncol, coli, colq, iqfileheader, mode, ifpl
         posbuff = np.append(posbuff, pos)
 
         if ifplot == 1:
-            
             plt.plot(signali, signalq, 'g')
-            #plt.plot(idata, qdata, 'r')
-            #plt.plot(idata[pos], qdata[pos], 'o')
+            plt.plot(idata, qdata, 'r')
+            plt.title("CalcWorkPoint Plot")
             plt.show()
+            plt.close()
+            #plt.plot((idata[pos], qdata[pos], 'o'))
 
     pos = EvaluatePos(posbuff, 20)
     fmeas = f[pos]
-
-
-    #inserire plot!!! Questa funzione serve per plottare....
 
     #if mode == 2:
     #[pos,fmeas]= dm.DataMatcher( file_name,IQfileheader,npoints,ncol,colI,colQ);

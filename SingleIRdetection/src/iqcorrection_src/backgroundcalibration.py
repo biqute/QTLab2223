@@ -3,24 +3,26 @@ import scipy
 import scipy.optimize
 from scipy.interpolate import interp1d
 
-import ellipsefit as ef
-import loadiq as liq
-import comparevector as cv
-import correctiq as ciq
-import correctiqbackground as ciqb
-import findiqcorrection as fiqc
-import qcalc
+import globvar
+from ellipsefit import EllipseFit
+from loadiq import LoadIQ
+from comparevector import CompareVector
+from correctiq import CorrectIQ
+from correctiqbackground import CorrectIQBackground
+from findiqcorrection import FindIQCorrection
+from qcalc import QCalc
 
-def BackgroundCalibration(iqfileheader, mixer, fmeas):
-    global checkpath
-    global ifplot
-    global nchan
-    global adcconv
+def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
+
+    checkpath = globvar.checkpath
+    logpath = globvar.logpath
+    nchan = globvar.nchan
+    adcconv = globvar.adcconv
 
     #Load the IQ loop data and subtract the offset from the separate offset
     #measurement
 
-    [f, idata, qdata] = liq.LoadIQ(iqfileheader + '_')
+    [f, idata, qdata] = LoadIQ(iqfileheader + '_')
 
     if fmeas > np.min(f):
         print('Correct Frequency range')
@@ -28,33 +30,35 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas):
         print('Error')
         return
     
-    [f0, i0, q0] = liq.LoadIQ(iqfileheader + 'off_')
-    cv.CompareVector(f, f0)
+    [f0, i0, q0] = LoadIQ(iqfileheader + 'off_')
+    CompareVector(f, f0)
     idata = idata - i0
     qdata = qdata - q0
 
     #Correct for the mixer imperfection
-    [idata, qdata] = ciq.CorrectIQ(idata, qdata, mixer)
+    [idata, qdata] = CorrectIQ(idata, qdata, mixer)
 
     #Same for the wide IQ scan
     #Note that the "strcat" function concatenates its arguments in a unique
     #character array
 
-    [fw, iw, qw] = liq.LoadIQ(iqfileheader + 'w_')
-    [f0w, i0w, q0w] = liq.LoadIQ(iqfileheader + 'offw_')
+    [fw, iw, qw] = LoadIQ(iqfileheader + 'w_')
+    [f0w, i0w, q0w] = LoadIQ(iqfileheader + 'offw_')
     iw = iw - i0w
     qw = qw - q0w
-    [iw, qw] = ciq.CorrectIQ(iw, qw, mixer)
+    [iw, qw] = CorrectIQ(iw, qw, mixer)
 
     #Crudely estimate of the resonance frequency, by observing S21 slightly
     #corrected data (we put the origin in the right place, nothing else)
 
-    [rmin, imin] = np.min(np.square(idata) + np.square(qdata))
+    squarediq = np.square(idata) + np.square(qdata)
+    rmin = np.min(squarediq)
+    imin = squarediq == rmin
     f1 = f[imin]
 
-    background = fiqc.FindIQCorrection(fw, iw, qw, [np.min(f), np.max(f)], f1, iqfileheader)
+    background = FindIQCorrection(fw, iw, qw, [np.min(f), np.max(f)], f1, iqfileheader, ifplot)
 
-    s21corr = ciqb.CorrectIQBackground(f, (idata + 1j*qdata), background)
+    s21corr = CorrectIQBackground(f, (idata + 1j*qdata), background)
 
     #find the mixer offset at the pulse measurement frequency for use later
     background.I0 = interp1d(f0, i0, fmeas) #(?) I'll leave a question mark here but i'm pretty sure this reproduces the matlab result
@@ -64,7 +68,7 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas):
     #rotated so that it does not point toward the origin.
     #First fit to a circle (actually an ellipse)
 
-    [r1, r2, x0, y0, phi] = ef.EllipseFit(np.real(s21corr), np.imag(s21corr))
+    [r1, r2, x0, y0, phi] = EllipseFit(np.real(s21corr), np.imag(s21corr))
 
     #This is the equation describing the ellipse - just plot this to check
     #that the fit figured out the right parameters.
@@ -168,7 +172,7 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas):
     resonance = outx + outy
     x0 = [r, 100000, fmeas]
 
-    [qtot, f0, qi, qc] = qcalc.QCalc(f, outx, outy, ifplot, iqname)
+    [qtot, f0, qi, qc] = QCalc(f, outx, outy, ifplot, iqname)
     resdata = [qtot, f0, qi, qc]
 
 

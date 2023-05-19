@@ -1,6 +1,8 @@
 import numpy as np
 
-def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader):
+import globvar
+
+def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader, ifplot):
 
     class Background:
         PAmp = 0
@@ -12,9 +14,8 @@ def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader):
         LoopRotation = 0
         OverallRotation = 0
 
-    global checkpath
-    global ifplot
-    global Nchan
+    checkpath = globvar.checkpath
+    nchan = globvar.nchan
 
     #Fit a wide range IQ scan for the purpose of removing background variations
     #of the microwave transmission
@@ -46,7 +47,7 @@ def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader):
 
     #for fitting the background, take points outside the range of the narrow
     #range measurement
-    ii = np.argwhere((fw < xwin[0]) or (fw > xwin[1]))
+    ii = fw < xwin[0] or fw > xwin[1]
     df = fw[-1] - fw[0]
 
     #model for the background:  quadratic amplitude variation with frequency

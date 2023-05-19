@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
 
-def CorrectIQ(idata, qdata, mixer):
+def CorrectIQ(Idata, Qdata, mixer):
 
 #Corrects IQ data for the mixer imperfection
 #usage:  [Icor, Qcor] = CorrectIQ( Idata, Qdata, mixer)
@@ -13,29 +13,31 @@ def CorrectIQ(idata, qdata, mixer):
 #   Icor -      corrected I
 #   Qcor -      corrected Q
 
-    ai = mixer.AI
-    aq = mixer.AQ
+    AI = mixer.AI
+    AQ = mixer.AQ
     gamma = mixer.Gamma
 
-    g = np.divide(ai*qdata, aq*idata)
-    theta = 0*idata
-    r = theta
+    g = AI * Qdata / (AQ * Idata)
+    theta = np.zeros(Idata.shape)
+    r = theta.copy()
 
-    ii = np.argwhere(idata >= 0)
-    theta[ii] = np.arctan(np.divide((np.cos(gamma) - g[ii]), np.sin(gamma)))
-    ii = np.argwhere(idata < 0)
-    theta[ii] = np.arctan(np.divide((np.cos(gamma) - g[ii]), np.sin(gamma))) - scipy.pi
+    II = Idata >= 0
+    theta[II] = np.arctan((np.cos(gamma) - g[II]) / np.sin(gamma))
+    II = Idata < 0
+    theta[II] = np.arctan((np.cos(gamma) - g[II]) / np.sin(gamma)) - np.pi
 
-    ii = np.argwhere(abs(np.cos(theta)) >= 0.5)
-    r[ii] = np.divide(idata[ii], (ai*np.cos(theta[ii])))
-    ii = np.argwhere(abs(np.cos(theta)) < 0.5)
-    r[ii] = np.divide(qdata[ii], (aq * np.cos(theta[ii] + gamma)))
+    II = np.abs(np.cos(theta)) >= 0.5
+    r[II] = Idata[II] / (AI * np.cos(theta[II]))
+    II = np.abs(np.cos(theta)) < 0.5
+    r[II] = Qdata[II] / (AQ * np.cos(theta[II] + gamma))
 
-    icor = np.multiply(r*np.sqrt(np.multiply(ai, aq)), np.cos(theta))
-    qcor = np.multiply(r*np.sqrt(np.multiply(ai, aq)), np.sin(theta))
+    Icor = r * np.sqrt(AI * AQ) * np.cos(theta)
+    Qcor = r * np.sqrt(AI * AQ) * np.sin(theta)
 
-    icor = np.reshape(icor, np.shape(idata), 'F')   #(?) Fortran - like index ordering should recall matlab reshape function
-    qcor = np.reshape(qcor, np.shape(qdata), 'F')   #(?) Fortran - like index ordering should recall matlab reshape function
+    Icor = np.reshape(Icor, Idata.shape)
+    Qcor = np.reshape(Qcor, Qdata.shape)
+
+    return [Icor, Qcor]
     
 
       

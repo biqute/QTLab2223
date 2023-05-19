@@ -1,7 +1,8 @@
 import sys
+import globvar
 
 def CompareVector(a, b):
-    global logpath
+    logpath = globvar.logpath
 
     if logpath:
         fid = open(logpath, 'a')

@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import linalg
 import math
+from matplotlib.patches import Ellipse
+
 from mathfunctions import ElementWiseProd
 
 def EllipseFit(x, y):
@@ -60,10 +62,8 @@ def EllipseFit(x, y):
     ones = np.ones(len(x))
     elementwiseprod = ElementWiseProd(x, y)
     M = np.hstack((2*elementwiseprod, np.square(y), 2*x, 2*y, ones.reshape((-1, 1))))
-    M = linalg.pinv(M)
-    least_squares_output = linalg.solve(M, -np.square(x))
-    parameters = M * (-np.square(x))
-    print(parameters)
+    least_squares_output = linalg.lstsq(M, -np.square(x))
+    parameters = least_squares_output[0]
 
     #Extract parameters from parameters vector
     a = 1
@@ -74,7 +74,6 @@ def EllipseFit(x, y):
     g = parameters[4]
 
     #Use Formulas from Mathworld to find semimajor_axis, semiminor_axis, x0, y0 and phi
-
     delta = b**2-a*c
     x0 = (c*d - b*f)/delta
     y0 = (a*f - b*d)/delta
