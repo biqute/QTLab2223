@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import pyplot as plt
 import scipy
 import scipy.optimize
 from scipy.interpolate import interp1d
@@ -25,7 +26,7 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     [f, idata, qdata] = LoadIQ(iqfileheader + '_')
 
     if fmeas > np.min(f):
-        print('Correct Frequency range')
+        print(' - BackgroundCalibration: OK: Correct Frequency range')
     else:
         print('Error')
         return
@@ -61,9 +62,30 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     s21corr = CorrectIQBackground(f, (idata + 1j*qdata), background)
 
     #find the mixer offset at the pulse measurement frequency for use later
-    background.I0 = interp1d(f0, i0, fmeas) #(?) I'll leave a question mark here but i'm pretty sure this reproduces the matlab result
-    background.Q0 = interp1d(f0, q0, fmeas) #(?) I'll leave a question mark here but i'm pretty sure this reproduces the matlab result
+    f0i0model = interp1d(f0, i0)    #(?) I'll leave a question mark here but i'm pretty sure this reproduces the matlab result
+    f0q0model = interp1d(f0, q0)
 
+    xnew = fmeas
+    yi0new = f0i0model(xnew)
+    yq0new = f0q0model(xnew)
+    
+    plt.plot(f0, i0, 'r', linewidth = 1.5, label = 'Data')
+    plt.plot(f0, f0i0model(f0), 'b', linewidth = 0.5, label = 'Fit')
+    plt.plot(xnew, yi0new, 'o')
+    plt.legend(loc = "upper left")
+    plt.title('BackgroundCalibration -> I0')
+    plt.show()
+
+    plt.plot(f0, q0, 'r', linewidth = 1.5, label = 'Data')
+    plt.plot(f0, f0q0model(f0), 'b', linewidth = 0.5, label = 'Fit')
+    plt.plot(xnew, yq0new, 'o')
+    plt.legend(loc = 'upper left')
+    plt.title('BackgroundCalibration -> Q0')
+    plt.show()
+
+    background.I0 = f0i0model
+    background.Q0 = f0q0model
+    
     #the IQ loop should be a circle now, but may be
     #rotated so that it does not point toward the origin.
     #First fit to a circle (actually an ellipse)
@@ -116,7 +138,7 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
 
     #keyboard
     s210 = s21corr
-    s21corr = np.multiply(s21corr, np.exp(-1j*background.OverallRotation))
+    s21corr = s21corr *np.exp(-1j*background.OverallRotation)
 
     #if ifplot
     #figure(HH)
@@ -132,7 +154,7 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     #note:  following the analysis of Khalil et al, arXiv:1108.3117v3, we
     #also scale the loop by the cos of the rotation angle
 
-    s21corr = 1 - np.cos(background.LoopRotation)*np.multiply(np.exp(-1j*background.LoopRotation), (1 - s21corr))
+    s21corr = 1 - np.cos(background.LoopRotation)*np.exp(-1j*background.LoopRotation)*(1 - s21corr)
     
     '''if ifplot
     figure(HH);
@@ -172,7 +194,7 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     resonance = outx + outy
     x0 = [r, 100000, fmeas]
 
-    [qtot, f0, qi, qc] = QCalc(f, outx, outy, ifplot, iqname)
+    [qtot, f0, qi, qc] = QCalc(f, outx, outy, iqname, ifplot)
     resdata = [qtot, f0, qi, qc]
 
 
@@ -222,6 +244,7 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
         
         print(iqfig,'-dpdf',[checkpath,'/',IQname,'.pdf'])
     end
-    '''
+    ''' 
+    print(background, outx, outy, f, resdata)
 
     return [background, outx, outy, f, resdata]

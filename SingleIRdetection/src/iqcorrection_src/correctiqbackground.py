@@ -1,5 +1,4 @@
 import numpy as np
-import findiqcorrection as fiq
 
 def CorrectIQBackground(f, s21data, background):
 

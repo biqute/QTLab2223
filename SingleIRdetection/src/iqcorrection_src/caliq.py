@@ -82,7 +82,7 @@ def Cal_IQ(filename, ncol, xcol, ycol, ifplot, cal_mix_file, nch):
         plt.plot(i0 + x, q0 + y, 'r', label = "Fit")
         plt.plot(icor + i0, qcor + q0, 'g', label = 'Correction')
         plt.legend(loc = "upper left")
-        plt.title("CalIQ Plot")
+        plt.title("CalIQ -> IQ Calibration Plot")
         plt.show()
 
         #print(h,'-dpdf',[checkpath,'/',cal_mix_file,'.pdf']);

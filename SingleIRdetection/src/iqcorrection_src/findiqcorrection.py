@@ -1,10 +1,9 @@
 import numpy as np
+from matplotlib import pyplot as plt
 
 import globvar
 
-def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader, ifplot):
-
-    class Background:
+class Background:
         PAmp = 0
         PPhase = 0
         Df = 0
@@ -13,6 +12,9 @@ def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader, ifplot):
         Q0 = 0
         LoopRotation = 0
         OverallRotation = 0
+
+def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader, ifplot):
+    print('data qui: ',fw, iw,  qw, xwin, f1, iqfileheader)
 
     checkpath = globvar.checkpath
     nchan = globvar.nchan
@@ -47,7 +49,7 @@ def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader, ifplot):
 
     #for fitting the background, take points outside the range of the narrow
     #range measurement
-    ii = fw < xwin[0] or fw > xwin[1]
+    ii = np.where(np.logical_or(fw < xwin[0], fw > xwin[1]))
     df = fw[-1] - fw[0]
 
     #model for the background:  quadratic amplitude variation with frequency
@@ -70,18 +72,41 @@ def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader, ifplot):
     #first determine the amplitude variation of the background with frequency
     
     p_amp = np.polyfit(fw[ii]/df, abs(iw[ii] + 1j*qw[ii]), bgpoldeg) #(?)Maybe polyfit gives different results?
-
     ref = [np.mean(abs(iw + 1j*qw)), np.mean(abs(iw +1j*qw))]
 
-    #Now determine the phase variation with frequency
+    if nchan == 1:
+        iqname = iqfileheader[-3: -1] #(?) entries!
+    else:
+        iqname = iqfileheader[-6: -1] #(?) entries!
 
-    p_phase = np.polyfit(fw[ii]/df, np.unwrap(np.angle(iw[ii], qw[ii])), 1)
-  
+    if ifplot == 1:
+        plt.plot(fw, np.absolute(iw + 1j*qw), label = 'Abs(I,Q)')
+        plt.plot(fw, np.polyval(p_amp, fw/df), label = 'Background Fit')
+        plt.plot(xwin, ref, 'o', 'g')
+        plt.xlabel('Frequency - Resonance frequency (Hz)')
+        plt.ylabel('ADC values')
+        plt.title('FindIQCorrection -> ' + iqname + ' Background Fit')
+        plt.legend(loc = "upper left")
+        plt.show()
+        plt.savefig(checkpath + '/BackgroundFitAmplitude' + iqname + '.pdf', format = 'pdf')
+
+    #Now determine the phase variation with frequency
+    p_phase = np.polyfit(fw[ii]/df, np.unwrap(np.angle(iw[ii] + 1j*qw[ii])), 1)
+    
+    if ifplot == 1:
+        plt.plot(fw, np.unwrap(np.angle(iw + 1j*qw)), label = 'Angle(I, Q)')
+        plt.plot(fw, np.polyval(p_phase, fw/df), label = 'Background Phase')
+        plt.xlabel('Frequency - Resonance frequency (Hz)')
+        plt.ylabel('Angle (rad)')
+        plt.title('FindIQCorrection -> ' + iqname + ' Background Fit')
+        plt.legend(loc = "upper left")
+        plt.show()
+    
+        plt.savefig(checkpath + '/BackgroundFitPhase' + iqname + '.pdf', format='pdf')
     #mymodel = @(a, df) polyval(p, df/Df) .* exp( 2i*pi * df * a(1) / c + 1i*a(2));
     #mychi2 = @(a) sum( abs( mymodel( a, fw(ii)) - complex( iw(ii), qw(ii))).^2);
     #c0 = [10 0];
     #a = fminsearch( mychi2, c0)
-
 
     def mymodel(a, b, ddf):
         return np.multiply(np.polyval(a, ddf/df), np.exp(1j*np.polyval(b, ddf/df)))
