@@ -204,3 +204,14 @@ def deleteDataset(filename, full_dataset_path = "/to/delete/path/dataset"):
     # "full_dataset_path" e.g. group/datasetname    #NOTe: Name included!!!
     with h5py.File(filename,  "a") as f:
         del f[full_dataset_path]
+
+def fspan_to_ispan(vec,fmin,fmax):
+    """
+    fmin, fmax -> i_min, i_max
+    """
+    i_min = max(round((fmin-vec[0])/((vec[len(vec)-1]-vec[0])/len(vec))),0)
+    i_max = min(round((fmax-vec[0])/((vec[len(vec)-1]-vec[0])/len(vec))),len(vec)-1)
+    i_min = min(i_min, len(vec) - 1)  # If fmin, fmax are out of measurement span, take the measurement span
+    i_max = max(i_max, 0)
+
+    return i_min, i_max
