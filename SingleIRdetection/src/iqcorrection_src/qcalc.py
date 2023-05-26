@@ -57,7 +57,7 @@ def QCalc(f, i, q, iqname, ifplot):
     qc = 1 / (1/qtot - 1/qi)
     f0 = a[3] + fmin
 
-    sdbfit = 20*np.log10(mymodel(fp, a))
+    #sdbfit = 20*np.log10(mymodel(fp, a))   #(fix)
     
     #if ifplot
     #plot( ff, sdB_fit, 'k--')

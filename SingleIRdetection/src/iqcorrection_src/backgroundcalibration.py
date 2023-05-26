@@ -26,10 +26,10 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     [f, idata, qdata] = LoadIQ(iqfileheader + '_')
 
     if fmeas > np.min(f):
-        print(' - BackgroundCalibration: OK: Correct Frequency range')
+        print('- BackgroundCalibration(): OK: Correct Frequency range')
     else:
-        print('Error')
-        return
+        print('- BackgroundCalibration(): Error: Non - Correct frequency range')
+        #return
     
     [f0, i0, q0] = LoadIQ(iqfileheader + 'off_')
     CompareVector(f, f0)
@@ -83,8 +83,8 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     plt.title('BackgroundCalibration -> Q0')
     plt.show()
 
-    background.I0 = f0i0model
-    background.Q0 = f0q0model
+    background.I0 = yi0new
+    background.Q0 = yq0new
     
     #the IQ loop should be a circle now, but may be
     #rotated so that it does not point toward the origin.
@@ -195,7 +195,7 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     x0 = [r, 100000, fmeas]
 
     [qtot, f0, qi, qc] = QCalc(f, outx, outy, iqname, ifplot)
-    resdata = [qtot, f0, qi, qc]
+    #resdata = [qtot, f0, qi, qc]
 
 
     '''
@@ -245,6 +245,5 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
         print(iqfig,'-dpdf',[checkpath,'/',IQname,'.pdf'])
     end
     ''' 
-    print(background, outx, outy, f, resdata)
 
-    return [background, outx, outy, f, resdata]
+    return [background, outx, outy, f, qtot, f0, qi, qc]

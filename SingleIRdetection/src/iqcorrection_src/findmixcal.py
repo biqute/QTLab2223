@@ -41,7 +41,7 @@ def FindMixCal(frequency, path, channel):
         fid = open(logpath, 'a')
         original_output = sys.stdout
         sys.stdout = fid
-        print(' - FindMixCal(): OK: frequency difference for the ' + str(channel) + '-th channel and mixer calibration: ' + str(frequency - float(file[-14:-4])))
+        print('- FindMixCal(): OK: frequency difference for the ' + str(channel) + '-th channel and mixer calibration: ' + str(frequency - float(file[-14:-4])))
         sys.stdout = original_output
         fid.close()
 

@@ -14,7 +14,6 @@ class Background:
         OverallRotation = 0
 
 def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader, ifplot):
-    print('data qui: ',fw, iw,  qw, xwin, f1, iqfileheader)
 
     checkpath = globvar.checkpath
     nchan = globvar.nchan
@@ -102,7 +101,7 @@ def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader, ifplot):
         plt.legend(loc = "upper left")
         plt.show()
     
-        plt.savefig(checkpath + '/BackgroundFitPhase' + iqname + '.pdf', format='pdf')
+        plt.savefig(checkpath + '\\BackgroundFitPhase' + iqname + '.pdf', format = 'pdf')
     #mymodel = @(a, df) polyval(p, df/Df) .* exp( 2i*pi * df * a(1) / c + 1i*a(2));
     #mychi2 = @(a) sum( abs( mymodel( a, fw(ii)) - complex( iw(ii), qw(ii))).^2);
     #c0 = [10 0];

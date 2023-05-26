@@ -36,10 +36,10 @@ def GetSpectraFile(key):
         sys.stdout = log  
         
         if (('out' in locals()) or ('out' in globals())):
-            print('- GetSpectraFile(): OK spectra files found: ' + str(key) +'\n')
+            print('- GetSpectraFile(): OK: Spectra files found: ' + str(key) +'\n')
         
         else:
-            print('- GetSpectraFile(): ERROR no spectra files found: ' + str(key) + '\n')
+            print('- GetSpectraFile(): ERROR: No spectra files found: ' + str(key) + '\n')
             out=[]
 
         log.close()

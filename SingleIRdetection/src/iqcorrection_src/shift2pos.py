@@ -26,3 +26,5 @@ def Shift2Pos(idata1, qdata1, iqfileheader, recnum, pulsenum, channel, pos, ifpl
             plt.ylabel('Q adc units')
             plt.legend('Resonance scan','Data','Corrected Data','Low frequency')
             plt.savefig(checkpath + '\\SyntCorrectionCh' + str(channel) + '_' + str(recnum) + str(pulsenum) + exts[i])
+
+    return [f, idata, qdata]
