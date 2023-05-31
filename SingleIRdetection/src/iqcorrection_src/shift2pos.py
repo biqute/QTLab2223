@@ -10,7 +10,7 @@ def Shift2Pos(idata1, qdata1, iqfileheader, recnum, pulsenum, channel, pos, ifpl
     checkpath = globvar.checkpath
     [f, idata, qdata] = LoadIQ(iqfileheader + '_')
 
-    [corri, corrq, a] = CorrSynt(iqfileheader, idata1, qdata1, 2, 1, channel, pos)
+    [corri, corrq, a] = CorrSynt(iqfileheader, idata1, qdata1, 2, 1, channel, pos, ifplot)
 
     exts = ['.pdf', '.png']
     cmds = ['-dpdf', '-dpng']
@@ -27,4 +27,4 @@ def Shift2Pos(idata1, qdata1, iqfileheader, recnum, pulsenum, channel, pos, ifpl
             plt.legend('Resonance scan','Data','Corrected Data','Low frequency')
             plt.savefig(checkpath + '\\SyntCorrectionCh' + str(channel) + '_' + str(recnum) + str(pulsenum) + exts[i])
 
-    return [f, idata, qdata]
+    return [corri, corrq, a]

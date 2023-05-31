@@ -2,13 +2,13 @@ from scipy import stats
 import numpy as np
 
 import loadiq as liq
+import globvar
 
-
-def CorrSynt(iqfileheader, signali, signalq, mode, recnum, channel, pos):
+def CorrSynt(iqfileheader, signali, signalq, mode, recnum, channel, pos, ifplot):
     #CORR_SYNT Summary of this function goes here
     #   Detailed explanation goes here
-    global checkpath
-    global ifplot
+    
+    checkpath = globvar.checkpath
 
     [f, idata, qdata] = liq.LoadIQ(iqfileheader + '_')
     recordlength = len(signali)
@@ -30,8 +30,8 @@ def CorrSynt(iqfileheader, signali, signalq, mode, recnum, channel, pos):
     b = np.mean(noisei)
     c = np.mean(noiseq)
 
-    #mode 0 traslation to the resonance point
-    #mode 1 traslation to the nearest point of the circle
+    #Mode 0 traslation to the resonance point
+    #Mode 1 traslation to the nearest point of the circle
     if mode == 0:
         s21 = np.square(idata) + np.square(qdata)
         [min, res] = [np.min(s21), s21.index(np.min(s21))] 
@@ -43,8 +43,8 @@ def CorrSynt(iqfileheader, signali, signalq, mode, recnum, channel, pos):
     if mode == 2:
         res = pos
 
-    ti = idata[res]-b
-    tq = qdata[res]-b
+    ti = idata[res] - b
+    tq = qdata[res] - b
     a = [ti, tq]
     corri = signali + ti
     corrq = signalq + tq
