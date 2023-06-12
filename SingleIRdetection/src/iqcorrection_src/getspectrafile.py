@@ -2,6 +2,12 @@ import os
 import sys
 import numpy as np
 import globvar
+from displog import DispLog
+
+# Return a list of the files contained in the 'key' path. If no file is found, returns an empty array.
+    # Argument:
+    # - key -> the path of which we want to list the content
+    # If there is only one file in the key path, the function only returns the name of that file instead of a list containing it.
 
 def GetSpectraFile(key):
 
@@ -9,41 +15,28 @@ def GetSpectraFile(key):
     out = []
     original = sys.stdout
 
-    #list is indeed a list of all directories in "key" path which begin with the character specified
-    #default is set to any character
+    #We want a list of all the files contained in the directory at 'key'. As default, the command 'os.listdir' returns a list of all the files.
     list = os.listdir(key)
-    #list = [f for f in list if f.startswith('.')]
 
     i = 0
     k = 0
     nonnull = 0
-    temp = (['null']*len(list))
+    out = []
 
     for i in range(len(list)):
-        if((list[i].find('.hdr') == -1) and (list[i].find('time') == -1) and (list[i].find('.log') == -1) and (list[i].find('.bin') == -1)):
-            temp[i-k] = list[i]
-            nonnull = nonnull + 1
-        else:
-            k=k+1
+        if((list[i].find('.txt') != -1) and list[i].find('spectra') != -1):
+            out.append(list[i])
         
-    for jj in range(len(temp)):
-        if temp[jj] != 'null':
-            out.append(temp[jj])
+    if out:
+        DispLog('- GetSpectraFile(): OK: Spectra files found: ' + str(key) +'\n')
+    else:
+        DispLog('- GetSpectraFile(): ERROR: No spectra files found: ' + str(key) + '\n')
+        out = []
+        return 
 
+    if len(out) == 1:
+        output = out[0]
+    else:
+        output = out
 
-    if logpath:
-        log = open(logpath, 'a')
-        sys.stdout = log  
-        
-        if (('out' in locals()) or ('out' in globals())):
-            print('- GetSpectraFile(): OK: Spectra files found: ' + str(key) +'\n')
-        
-        else:
-            print('- GetSpectraFile(): ERROR: No spectra files found: ' + str(key) + '\n')
-            out=[]
-
-        log.close()
-
-    sys.stdout = original
-
-    return out
+    return output

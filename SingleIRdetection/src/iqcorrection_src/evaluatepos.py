@@ -12,32 +12,24 @@
 #logpath = 'C:/Users/alexb/Desktop/Save/prova.log'
 
 import numpy as np
-import sys
-import os
+from displog import DispLog
 
-import globvar
+def EvaluatePos(vector, percentage):
 
-def EvaluatePos(vect, percentage):
+    vec = np.sort(np.array(vector))
+    dell = np.int32(round(len(vec)*percentage/200))
 
-    logpath = globvar.logpath
+    if dell >= 1:
+        vec = vec[dell - 1:  - dell - 1]
 
-    vect = np.array(vect)
-    vect = np.sort(vect)
-    dell = np.int32(round(len(vect)*percentage/200))
-    vect = vect[dell-1: len(vect) - dell]
-    pos = round(np.mean(vect))
-    lndev = np.abs(np.array(vect - pos))
+    pos = round(np.mean(vec))
+    lndev = np.abs(np.array(vec - pos))
+
+    meanlndev = np.mean(lndev)
     
-    if logpath:
-        fid = open(logpath, 'a')
-        original_stdout = sys.stdout
-        sys.stdout = fid  #Change the standard output to the file we created.
-
-    if np.mean(lndev) > 0.5:
-        print('- EvaluatePos(): ERROR: working point frequency is unstable: ' + str(np.mean(lndev)))
+    if meanlndev > 0.5:
+        DispLog('- EvaluatePos(): ERROR: working point frequency is unstable: ' + str(meanlndev))
     else:
-        print('- EvaluatePos(): OK: working point frequency is stable: ' + str(np.mean(lndev)))
+        DispLog('- EvaluatePos(): OK: working point frequency is stable: ' + str(meanlndev))
 
-    sys.stdout = original_stdout   
-    fid.close()
     return pos

@@ -1,13 +1,14 @@
-import checkfile
+from checkfile import CheckFile
 from displog import DispLog
 import globvar
 
-#nukids_displog missing and necessary to be imported!
+#This
 
 def LoadConfiguration(filename):
     map = []
 
-    if(checkfile.CheckFile(filename) == False): 
+    if(CheckFile(filename) == False): 
+        DispLog('Configuration File not found')
         return None
 
     fid = open(filename)

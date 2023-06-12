@@ -79,9 +79,9 @@ for ii in range(nch):
     iqfileheader_ch.append(iqpath + str(iqheader[ii]))
 
 #Create the list of spectra files. Note we use the symbols "\\" instead of "\" for paths, otherwise it wouldn't work.
-data_base_filename = spectra_path + '\\' + 'run' + str(run_num) + '\\'
-print('File root: ' + data_base_filename)
-file_names = GetSpectraFile(data_base_filename)
+spectra_path_run = spectra_path + '\\' + 'run' + str(run_num) + '\\'
+print('File root: ' + spectra_path_run)
+file_names = GetSpectraFile(spectra_path_run)
 print(file_names)
 
 if not file_names:
@@ -98,7 +98,7 @@ fmeas2 = np.zeros(nch)
 cal_mix_file = ([[]]*nch)
 
 for ii in range (nch):
-    [posch[ii], fmeas[ii]] = CalcWorkPoint(data_base_filename + file_names[0], recordlength, 2*nch, 2*ii, 2*ii+1, iqfileheader_ch[ii], mode, ifplot)
+    [posch[ii], fmeas[ii]] = CalcWorkPoint(spectra_path_run + file_names[0], recordlength, 2*nch, 2*ii, 2*ii+1, iqfileheader_ch[ii], mode, ifplot)
     fmeas2[ii] = float(config[10 + ii][1])
     print('Frequency difference for the ' + str(ii) + '-th channel: ' + str(fmeas[ii]-fmeas2[ii]))
 

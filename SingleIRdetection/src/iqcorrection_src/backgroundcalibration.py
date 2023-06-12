@@ -69,19 +69,20 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     yi0new = f0i0model(xnew)
     yq0new = f0q0model(xnew)
     
-    plt.plot(f0, i0, 'r', linewidth = 1.5, label = 'Data')
-    plt.plot(f0, f0i0model(f0), 'b', linewidth = 0.5, label = 'Fit')
-    plt.plot(xnew, yi0new, 'o')
-    plt.legend(loc = "upper left")
-    plt.title('BackgroundCalibration -> I0')
-    plt.show()
+    if ifplot == 1:
+        plt.plot(f0, i0, 'r', linewidth = 1.5, label = 'Data')
+        plt.plot(f0, f0i0model(f0), 'b', linewidth = 0.5, label = 'Fit')
+        plt.plot(xnew, yi0new, 'o')
+        plt.legend(loc = "upper left")
+        plt.title('BackgroundCalibration -> I0')
+        plt.show()
 
-    plt.plot(f0, q0, 'r', linewidth = 1.5, label = 'Data')
-    plt.plot(f0, f0q0model(f0), 'b', linewidth = 0.5, label = 'Fit')
-    plt.plot(xnew, yq0new, 'o')
-    plt.legend(loc = 'upper left')
-    plt.title('BackgroundCalibration -> Q0')
-    plt.show()
+        plt.plot(f0, q0, 'r', linewidth = 1.5, label = 'Data')
+        plt.plot(f0, f0q0model(f0), 'b', linewidth = 0.5, label = 'Fit')
+        plt.plot(xnew, yq0new, 'o')
+        plt.legend(loc = 'upper left')
+        plt.title('BackgroundCalibration -> Q0')
+        plt.show()
 
     background.I0 = yi0new
     background.Q0 = yq0new

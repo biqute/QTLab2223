@@ -17,7 +17,7 @@ class Mixer:
     Q0 = 0
     Amp = 0
 
-def Cal_IQ(filename, ncol, xcol, ycol, ifplot, cal_mix_file, nch):
+def Cal_IQ(filename, ncol, xcol, ycol, cal_mix_file, nch, ifplot):
 
     #Function to read the IQ mixer calibration file, fit to an ellipse and
     #calculate the correction coefficients.  See the appendix of Jiansong Gao's
@@ -82,7 +82,7 @@ def Cal_IQ(filename, ncol, xcol, ycol, ifplot, cal_mix_file, nch):
         plt.plot(i0 + x, q0 + y, 'r', label = "Fit")
         plt.plot(icor + i0, qcor + q0, 'g', label = 'Correction')
         plt.legend(loc = "upper left")
-        plt.title("CalIQ -> IQ Calibration Plot")
+        plt.title("CalIQ() -> IQ Calibration Plot")
         plt.show()
 
         #print(h,'-dpdf',[checkpath,'/',cal_mix_file,'.pdf']);

@@ -1,9 +1,11 @@
 import sys
 import os
-from globvar import logpath
+import globvar
 
 def DispLog(message):
     
+    logpath = globvar.logpath
+
     if logpath:
         original = sys.stdout
         fid = open(logpath, 'a')
@@ -12,4 +14,6 @@ def DispLog(message):
         sys.stdout = original
         fid.close()
 
+    else:
+        print('- DispLog(): ERROR: Log file not found \n' + message)
 
