@@ -24,7 +24,11 @@ def GetSpectraFile(key):
     out = []
 
     for i in range(len(list)):
-        if((list[i].find('.txt') != -1) and list[i].find('spectra') != -1):
+        if list[i].find('spectra') != -1 and list[i].find('txt') != -1:
+            out.append(list[i])
+
+    for i in range(len(list)):
+        if list[i].find('spectra') == -1 and list[i].find('txt') != -1:
             out.append(list[i])
         
     if out:
@@ -33,10 +37,5 @@ def GetSpectraFile(key):
         DispLog('- GetSpectraFile(): ERROR: No spectra files found: ' + str(key) + '\n')
         out = []
         return 
-
-    if len(out) == 1:
-        output = out[0]
-    else:
-        output = out
-
-    return output
+    
+    return out

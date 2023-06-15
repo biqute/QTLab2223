@@ -1,59 +1,9 @@
 import numpy as np
 from scipy import linalg
 import math
-from matplotlib.patches import Ellipse
-
 from mathfunctions import ElementWiseProd
 
 def EllipseFit(x, y):
-    #
-    # ellipse_fit - Given a set of points (x,y), ellipse_fit returns the
-    # best-fit ellipse (in the Least Squares sense) 
-    #
-    # Input:                  
-    #                       x - a vector of x measurements
-    #                       y - a vector of y measurements
-    #
-    # Output:
-    #
-    #                   semimajor_axis - Magnitude of ellipse longer axis
-    #                   semiminor_axis - Magnitude of ellipse shorter axis
-    #                   x0 - x coordinate of ellipse center 
-    #                   y0-  y coordinate of ellipse center 
-    #                   phi - Angle of rotation in radians with respect to
-    #                   the minor axis
-    #
-    # Algorithm used:
-    #
-    # Given the quadratic form of an ellipse: 
-    #  
-    #       a*x^2 + 2*b*x*y + c*y^2  + 2*d*x + 2*f*y + g = 0   (1)
-    #                          
-    #  we need to find the best (in the Least Square sense) parameters a,b,c,d,f,g. 
-    #  To transform this into the usual way in which such estimation problems are presented,
-    #  divide both sides of equation (1) by a and then move x^2 to the
-    # other side. This gives us:
-    #
-    #       2*b'*x*y + c'*y^2  + 2*d'*x + 2*f'*y + g' = -x^2            (2)
-    #  
-    #   where the primed parametes are the original ones divided by a.
-    #  Now the usual estimation technique is used where the problem is
-    #  presented as:
-    #
-    #    M * p = b,  where M = [2*x*y y^2 2*x 2*y ones(size(x))], 
-    #    p = [b c d e f g], and b = -x^2. We seek the vector p, given by:
-    #    
-    #    p = pseudoinverse(M) * b.
-    #  
-    #    From here on I used formulas (19) - (24) in Wolfram Mathworld:
-    #    http://mathworld.wolfram.com/Ellipse.html
-    #
-    #
-    # Programmed by: Tal Hendel <thendel@tx.technion.ac.il>
-    # Faculty of Biomedical Engineering, Technion- Israel Institute of Technology     
-    # 12-Dec-2008
-    #
-    #--------------------------------------------------------------------------
 
     x = np.array(x)
     y = np.array(y)

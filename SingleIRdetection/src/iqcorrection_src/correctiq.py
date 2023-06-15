@@ -1,15 +1,14 @@
 import numpy as np
-import scipy
 
 def CorrectIQ(Idata, Qdata, mixer):
 
-#Corrects IQ data for the mixer imperfection
-#usage:  [Icor, Qcor] = CorrectIQ( Idata, Qdata, mixer)
-#inputs:
+# Correct IQ data for the mixer imperfection
+# usage:  [Icor, Qcor] = CorrectIQ( Idata, Qdata, mixer)
+# inputs:
 #   Idata -     I quadrature
 #   Qdata -     Q quadrature
 #   mixer -     structure returned by cal_IQ.m
-#outputs:
+# outputs:
 #   Icor -      corrected I
 #   Qcor -      corrected Q
 

@@ -5,6 +5,7 @@ import scipy.optimize
 from scipy.interpolate import interp1d
 
 import globvar
+from displog import DispLog
 from ellipsefit import EllipseFit
 from loadiq import LoadIQ
 from comparevector import CompareVector
@@ -15,49 +16,48 @@ from qcalc import QCalc
 
 def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
 
-    checkpath = globvar.checkpath
-    logpath = globvar.logpath
     nchan = globvar.nchan
-    adcconv = globvar.adcconv
-
     #Load the IQ loop data and subtract the offset from the separate offset
     #measurement
 
+    # -------- NORMAL FREQUENCY RANGE -----------
+
+    # -> Here we load IQ data for the frequency swipe with the cryostat plugged in and cold
     [f, idata, qdata] = LoadIQ(iqfileheader + '_')
 
-    if fmeas > np.min(f):
-        print('- BackgroundCalibration(): OK: Correct Frequency range')
+    if fmeas > np.min(f) and fmeas < np.max(f):
+        DispLog('- BackgroundCalibration(): OK: Correct Frequency range')
     else:
-        print('- BackgroundCalibration(): Error: Non - Correct frequency range')
+        DispLog('- BackgroundCalibration(): Error: Wrong Frequency range')
         #return
     
+    # -> Here we load IQ data for the frequency swipe with the cryostat unplugged
     [f0, i0, q0] = LoadIQ(iqfileheader + 'off_')
     CompareVector(f, f0)
     idata = idata - i0
     qdata = qdata - q0
 
-    #Correct for the mixer imperfection
+    # -> Here we correct for the mixer imperfection using fit results on the calibration file, which are stored in the mixer class
     [idata, qdata] = CorrectIQ(idata, qdata, mixer)
 
-    #Same for the wide IQ scan
-    #Note that the "strcat" function concatenates its arguments in a unique
-    #character array
+    # -------- WIDE FREQUENCY RANGE -----------
 
+    # Now we do exactly the same for the wide frequency range swipe!
+
+    # -> Here we load IQ data for the frequency swipe with the cryostat plugged in and cold
     [fw, iw, qw] = LoadIQ(iqfileheader + 'w_')
     [f0w, i0w, q0w] = LoadIQ(iqfileheader + 'offw_')
     iw = iw - i0w
     qw = qw - q0w
     [iw, qw] = CorrectIQ(iw, qw, mixer)
 
-    #Crudely estimate of the resonance frequency, by observing S21 slightly
-    #corrected data (we put the origin in the right place, nothing else)
+    # Crudely estimate of the resonance frequency, by observing S21 slightly
+    # corrected data (we put the origin in the right place, nothing else)
+    indexmin = np.argmin(np.square(idata) + np.square(qdata))
+    fmin = f[indexmin]
 
-    squarediq = np.square(idata) + np.square(qdata)
-    rmin = np.min(squarediq)
-    imin = squarediq == rmin
-    f1 = f[imin]
-
-    background = FindIQCorrection(fw, iw, qw, [np.min(f), np.max(f)], f1, iqfileheader, ifplot)
+    # Now we fit the background through polynomials
+    background = FindIQCorrection(fw, iw, qw, np.array([np.min(f), np.max(f)]), fmin, iqfileheader, ifplot)
 
     s21corr = CorrectIQBackground(f, (idata + 1j*qdata), background)
 
@@ -108,7 +108,7 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     r = np.mean([r1, r2])
 
     def mymodel(c, x):
-        return x0 + 1j*y0 - r*np.exp(1j*(2*np.arctan(2*(x-f1-c[2]*1e3)*c[1]*1e-6) + c[0]))
+        return x0 + 1j*y0 - r*np.exp(1j*(2*np.arctan(2*(x-fmin-c[2]*1e3)*c[1]*1e-6) + c[0]))
     
     def mychi2(c):
         return np.sum(np.square(abs(s21corr - mymodel(c, f))))

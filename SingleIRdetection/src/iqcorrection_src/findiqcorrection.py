@@ -15,31 +15,31 @@ class Background:
 
 def FindIQCorrection(fw, iw, qw, xwin, f1, iqfileheader, ifplot):
 
-    checkpath = globvar.checkpath
-    nchan = globvar.nchan
-
-    #Fit a wide range IQ scan for the purpose of removing background variations
-    #of the microwave transmission
+    # Fit a wide range IQ scan to remove background variations of the microwave transmission
     #
-    #How to:  [p_amp, p_phase, Df] = find_iq_correction( fw, iw, qw, xwin, f1)
+    #How to:  [p_amp, p_phase, Df] = find_iq_correction(fw, iw, qw, xwin, f1)
 
     #Inputs:
 
     #   fw -        IQ scan frequency data
     #   iw -        I data
     #   qw -        Q data
-    #   xwin -      two element vector of frequencies to exclude from the fit
+    #   xwin -      Two element vector of frequencies to exclude from the fit
     #               (because this is where the resonance is)
     #   f1 -        an arbitrary frequency offset - make this approximately the
     #               resonance frequency
     #Outputs:
 
-    #   background  a structure containing the background fit info
+    # background: a structure containing the background fit info
     #       .p_amp -     polynomial fit to the magnitude
     #       .p_phase -   polynomial fit to the phase
     #       .Df -        total frequency scan used for scaling
+    
+    checkpath = globvar.checkpath
+    nchan = globvar.nchan
 
-    #measure frequency relative to f1
+    xwin = np.array(xwin)
+    # measure frequency relative to f1
     fw = fw - f1
     xwin = xwin - f1
     xwinfact = 1

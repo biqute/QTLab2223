@@ -1,4 +1,3 @@
-import os
 import numpy as np
 from scipy import stats
 from matplotlib import pyplot as plt
@@ -6,7 +5,6 @@ from matplotlib import pyplot as plt
 import globvar
 from loadiq import LoadIQ
 from evaluatepos import EvaluatePos
-from mathfunctions import MinColumnWise, MaxColumnWise
 from readdata import ReadData
 
 # Calcolate working point frequency and eventually correct it.
@@ -25,14 +23,14 @@ def CalcWorkPoint(spectra_file_name, npoints, ncol, coli, colq, iqfileheader, if
     npoints = int(npoints)
     ncol = int(ncol)
     bb = int(round(npoints/5))
-    posbuff = []
+    posbuff = list()
 
-    #Load I and Q from the data file
+    #Load I and Q from the data file. Not any IQ dataset: we load IQ data relative to a frequency sweep witrh the cryostat cold and connected!
     [f, idata, qdata] = LoadIQ(iqfileheader)
 
-    for j in range(200):
-        #Load I and Q from the spectra file, aka the file containing pulse data
-        [idata_spectra, qdata_spectra] = ReadData(spectra_file_name, coli, colq, 4000*j, npoints*(j + 1))
+    for j in range(50):
+        #Load I and Q from the spectra file, aka the file containing the pulse data
+        [idata_spectra, qdata_spectra] = ReadData(spectra_file_name, coli, colq, npoints*j, npoints*(j + 1))
 
         if len(idata_spectra) == len(qdata_spectra) and len(idata_spectra) == npoints:
         #Correct for the mixer - first remove the DC offsets.  We could either use
@@ -61,15 +59,21 @@ def CalcWorkPoint(spectra_file_name, npoints, ncol, coli, colq, iqfileheader, if
             b = np.mean(noisei)
             c = np.mean(noiseq)
 
-            min = np.min((idata-b)**2 + (qdata-c)**2)
+            #min = np.min((idata-b)**2 + (qdata-c)**2)
             pos = np.argmin((idata-b)**2 + (qdata-c)**2)
-            posbuff = posbuff.append(pos)
+            posbuff.append(pos)
 
-            if ifplot == 1 and j%5 == 0:
-                plt.plot(signali, signalq, 'g')
-                plt.plot(idata, qdata, 'r')
-                plt.plot((idata[pos], qdata[pos], 'o'))
-                plt.title("CalcWorkPoint Plot")
+            if coli == 0:
+                nch = 1
+            else:
+                nch = 2
+
+            if ifplot == 1 and j%9 == 0:
+                plt.plot(signali, signalq, 'g', linewidth = 1.5, label = 'Spectra')
+                plt.plot(idata, qdata, 'r', linewidth = 1.5, label = 'IQ Data')
+                plt.plot(idata[pos], qdata[pos], 'b', label = 'I,Q[pos]', marker = '+')
+                plt.title(" - CalcWorkPoint() -> " + str(j) + '-th plot for channel ' + str(nch))
+                plt.legend(loc = "upper left")
                 plt.show()
                 plt.close()
                 

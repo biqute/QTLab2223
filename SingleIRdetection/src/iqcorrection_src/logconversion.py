@@ -17,29 +17,21 @@
 
 import sys
 import os
-
-import globvar
+from displog import DispLog
 
 def LogConversion(fmeas, run_num, meas_num, spectra_path, iqpath, iqheader, cal_mix_file, mode, nch, recordlength):
-    
-    logname = globvar.logpath        
-    fid = open(logname, 'a')
-    original_stdout = sys.stdout
-    sys.stdout = fid 
-    
-    print('Run: ' + str(run_num) + '| Measure number: ' + str(meas_num))
-    print('Number of channels: ' + str(nch))
-    print('Record length: ' + str(recordlength))
-    print('IQ path: ' + str(iqpath))
-    print('Spectra path: ' + str(spectra_path))
-    print('Correction mode: ' + str(mode))
+
+    DispLog('Run: ' + str(run_num) + '| Measure number: ' + str(meas_num))
+    DispLog('Number of channels: ' + str(nch))
+    DispLog('Record length: ' + str(recordlength))
+    DispLog('IQ path: ' + str(iqpath))
+    DispLog('Spectra path: ' + str(spectra_path))
+    DispLog('Correction mode: ' + str(mode))
           
     for ii in range(nch):
-        print('-------Ch' + str(ii) + ' settings-------')
-        print('Mixer calibration: ' + str(cal_mix_file[ii]))
-        print('IQ header: ' + str(iqheader[ii]))
-        print('Frequency: ' + str(fmeas[ii]))
+        DispLog('-------Ch' + str(ii + 1) + ' settings-------')
+        DispLog('Mixer calibration: ' + str(cal_mix_file[ii]))
+        DispLog('IQ header: ' + str(iqheader[ii]))
+        DispLog('Frequency: ' + str(fmeas[ii]))
 
-    print('CHECKS: ') #(?)
-    sys.stdout = original_stdout
-    fid.close()
+    DispLog('CHECKS: ')
