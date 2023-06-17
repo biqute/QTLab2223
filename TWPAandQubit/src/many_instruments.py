@@ -76,14 +76,17 @@ def manual_S21(instrFSV: fsv.ManageFSV, instrSMA: sma.ManageSMA, powerdBm, fmin,
 
     return datasets_list
 
-def acquire_S21(instrVNA: vna.ManageVNA,fmin,fmax,powerdBm,npoints,navgs,filename,group,plot_fig=0):
+def acquire_S21(instrVNA: vna.ManageVNA,fmin,fmax,powerdBm,npoints,navgs,filename,group,write_IQ=1,plot_fig=0):
     """
-    Calculates S21 spectrum with VNA
+    Measure S21 spectrum with VNA and save into .h5 file
 
     powerdBm: Input power (power of the generated signal)
     nfreqs: Number of frequencies sent throught the line in the range (fmin, fmax)
     npoints: Number of points of the spectrum analyzer (note: we need just the peak height!)
     navgs: Number of averages of the spectrum analyzer
+    filename: Name of the .h5 file where the measure is saved
+    group: Name of the directory of the .h5 file where the measure is saved
+    write_IQ: (1) write in the .h5 file both I and Q; (2) write only |S21|dB
     """
 
 
@@ -95,34 +98,34 @@ def acquire_S21(instrVNA: vna.ManageVNA,fmin,fmax,powerdBm,npoints,navgs,filenam
     read_mat = hf.get(full_dataset_name)
     hf.close()
     if read_mat is not None:
-        sys.exit("Dataset already exists!")
+        sys.exit("A dataset with the same name already exists!")
     
     # Perform the scan
-    #freq, I, Q = instrVNA.single_scan(fmin,fmax,powerdBm,npoints,navgs)
     try:
-        freq, S21 = instrVNA.single_scan(fmin,fmax,powerdBm,npoints,navgs)
-        # Here we calculate the matrix element in dB, form its real and imaginary parts
-        #S21 = vna.IQ_to_S21(I,Q)
+        freq, I, Q = instrVNA.single_scan(fmin,fmax,powerdBm,npoints,navgs)
 
-        # Save S21dBm data
+        # Save I, Q data
         hf = h5py.File(filename, 'a')
-        mat = [freq, S21]
+        if write_IQ == 1:
+            mat = [freq, I, Q]
+        else:
+            S21dB = instrVNA.IQ_to_S21dB(I,Q)
+            mat = [freq, S21dB]
         hf.create_dataset(full_dataset_name, data = mat)
         hf.close()
 
-        # Save (backup) data in a "per sè" file
-        t = round(time.time())
-        temp_filename = "backup/" + full_dataset_name.replace("/"," ") + ".h5"
-        hf = h5py.File(temp_filename, 'a')
-        mat = [freq, S21]
-        hf.create_dataset("time " + str(t), data = mat)
-        hf.close()
+        # [Backup feature disabled in this version]
 
         # Try to read the just written data
         hf = h5py.File(filename, 'r')
         read_mat = hf.get(full_dataset_name)
         read_freqs = read_mat[0]
-        read_S21dBm = read_mat[1]
+        if write_IQ == 1:
+            read_I = read_mat[1]
+            read_Q = read_mat[2]
+            read_S21dBm = instrVNA.IQ_to_S21dB(read_I, read_Q)
+        else:
+            read_S21dBm = read_mat[1]
         hf.close()
 
         # Save picture of acquired data
@@ -151,7 +154,7 @@ def acquire_S21(instrVNA: vna.ManageVNA,fmin,fmax,powerdBm,npoints,navgs,filenam
         time.sleep(1)
         
         if plot_fig == 1:
-            fig, ax = acquire_S21(instrVNA,fmin,fmax,powerdBm,npoints,navgs,filename,group,plot_fig)
+            fig, ax = acquire_S21(instrVNA,fmin,fmax,powerdBm,npoints,navgs,filename,group,write_IQ,plot_fig)
             return fig, ax
 
     

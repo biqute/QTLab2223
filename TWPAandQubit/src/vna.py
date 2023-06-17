@@ -44,7 +44,7 @@ class ManageVNA:
         """
         self.instr.query('*CLS;*OPC?')
     
-    def single_scan(self,fmin,fmax,powerdBm,npoints,navgs,print_progress=0): 
+    def single_scan(self,fmin,fmax,powerdBm,ifbw,npoints,navgs,print_progress=0): 
         """
         Tells the device to perform "navgs" times a scan of the S21 spectrum in the frequency span [fmin,fmax]
         by sampling "npoints" equal spaced frequencies.
@@ -63,6 +63,9 @@ class ManageVNA:
             
         # Set desired output power in dBm (typical value = -15dBm)
         self.set_power(powerdBm)
+
+        # Set desired IFBW
+        self.set_IFBW(ifbw)
             
         # Set number of sampled frequencies in the displayed frequency range (number of sampled frequencies at each sweep)
         self.set_sweep_points(npoints)
@@ -76,11 +79,12 @@ class ManageVNA:
 
         # A single scan w/ npoints > "max_npoints" will be SPLIT in many scans!
         if npoints > self.max_npoints:
-            nint = np.ceil(npoints/self.max_npoints)
-            new_npoints = round(npoints/nint)
+            nint = np.ceil(npoints/self.max_npoints)    # Number of intervals that the freqspan is divided
+                                                        # for each interval will be performed a scan
+            new_npoints = round(npoints/nint)           # Number of points of each of the many scans
             if print_progress == 1:
                 print("MULTISCAN triggered with:\nNumber of divided intervals: ",nint,"; Number of pts per interval: ",new_npoints,"; Total number of pts: ",new_npoints*nint)
-            return  self.multi_scan(fmin,fmax,powerdBm,new_npoints,navgs,nint)
+            return  self.multi_scan(fmin,fmax,powerdBm,ifbw,new_npoints,navgs,nint)
         else:
             # With the instructions above we prepared the display. Now we call a function that makes
             # the "navgs" sweeps, so at the end of the function we'll see the averaged measurements on the screen.
@@ -91,23 +95,18 @@ class ManageVNA:
             # - "freq" is the array of the sampled frequencies
             # - "I" and "Q" are respecively the (averaged) measurements of real(I) and imaginary(Q) parts
             # of the selected matrix element (e.g. S21), corresponding to the frequencies in the "freq" array
-            #time.sleep(5)
 
-            #freq, I, Q = self.readIQ()
-            freq, S21 = self.read_data()
+            freq, I, Q = self.readIQ()
 
             # Now we got the desired values, we set the display of the instrument in a way that is usefull
             # to see real time changes on the trasmission line
             
-            #self.instr.query('INIT:CONT 1;*OPC?') #Set continuos sweep
-            
-            #self.set_average(navgs)
+            self.instr.query('INIT:CONT 1;*OPC?') #Set continuos sweep
 
             
-            #return freq,I,Q
-            return freq, S21
+            return freq, I, Q
 
-    def multi_scan(self,fmin,fmax,powerdBm,npoints,navgs,nint,print_progress=0):
+    def multi_scan(self,fmin,fmax,powerdBm,ifbw,npoints,navgs,nint,print_progress=0):
         """
         This function is only called by single_scan(). Its not meant to be called by itself!
         If npoints selected for single scan is too high that makes the VNA time out, then this function is called.
@@ -121,27 +120,23 @@ class ManageVNA:
         sub_fmax = fmin
 
         freq_vec=np.zeros(0)    # Initialize array containing MERGED data
-        S21_vec = np.zeros(0)
-        #I_vec=np.zeros(0)
-        #Q_vec=np.zeros(0)
+        I_vec=np.zeros(0)
+        Q_vec=np.zeros(0)
 
         for i in np.arange(0,nint):
             sub_fmin=sub_fmin+fdist
             sub_fmax=sub_fmin+fdist
             if print_progress == 1:
                 print(sub_fmin," - ",sub_fmax)
-            #freq, I, Q = self.single_scan(sub_fmin,sub_fmax,powerdBm,npoints,navgs)
-            freq, S21 = self.single_scan(sub_fmin,sub_fmax,powerdBm,npoints,navgs)
+            freq, I, Q = self.single_scan(sub_fmin,sub_fmax,powerdBm,ifbw,npoints,navgs)
             
             freq_vec=np.append(freq_vec,freq[1:len(freq)])
-            #I_vec=np.append(I_vec,I[1:len(I)])
-            #Q_vec=np.append(Q_vec,Q[1:len(Q)])
-            S21_vec = np.append(S21_vec,S21[1:len(S21)])
+            I_vec=np.append(I_vec,I[1:len(I)])
+            Q_vec=np.append(Q_vec,Q[1:len(Q)])
 
         freq_vec.flatten()
-        #I_vec.flatten()
-        #Q_vec.flatten()
-        S21_vec.flatten()
+        I_vec.flatten()
+        Q_vec.flatten()
 
         # Now we got the desired values, we set the display of the instrument in a way that is usefull
         # to see real time changes on the trasmission line
@@ -149,8 +144,7 @@ class ManageVNA:
         self.set_range(fmin,fmax)
         self.instr.query('INIT:CONT 1;*OPC?') #Set continuos sweep
 
-        #return freq_vec,I_vec,Q_vec        
-        return freq_vec,S21_vec
+        return freq_vec,I_vec,Q_vec
 
     def make_sweeps(self):
         # Clear the memory of the instrument (past sweeps measurements)
@@ -303,11 +297,17 @@ class ManageVNA:
     def set_lin_scale(self):
         self.instr.query('CALC:FORMat MLIN;*OPC?')
 
-def IQ_to_S21(I,Q):
+def IQ_to_S21dB(I,Q):
     """
-    Calculates S21 in dB, from its real I and imaginary Q parts
+    Calculates |S21| in dB, from its real I and imaginary Q parts
     """
     S21dB = 20*np.log10(np.sqrt(np.multiply(I,I)+np.multiply(Q,Q)))
     return S21dB
+def IQ_to_phase(I,Q):
+    """
+    Calculates the phase, from real I and imaginary Q parts
+    """
+    phase = np.arctan2(I,Q)
+    return phase
 
     
