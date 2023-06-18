@@ -15,8 +15,7 @@ class ManageSIM:
         pass
 
     def set_voltage(self, value):
-
-        cmd = "VOLT "+str(value) + ";*OPC?\n"        #Set voltage, "value" is in Volt
+        cmd = "VOLT "+str(round(value,3)) + ";*OPC?\n"        #Set voltage, "value" is in Volt
         return self.instr.query(cmd) 
 
     def set_output(self,value):          #takes a value: 0 or 1

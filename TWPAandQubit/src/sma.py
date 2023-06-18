@@ -26,7 +26,7 @@ class ManageSMA:
         self.instr.write_str('SOURce1:FREQuency:CW '+str(freq))
         
     def set_amplitude(self, amplitude):
-        # Set the amplitude of the output signal (output power) [dBm]
+        # Set the power of the output signal (output power) [dBm]
         if amplitude <= self.max_amplitude:
             self.instr.write_str('SOURce1:POWer:LEVel:IMMediate:AMPLitude '+str(amplitude)) # e.g. -40[dBm]
         else:

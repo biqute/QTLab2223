@@ -299,13 +299,13 @@ class ManageVNA:
 
 def IQ_to_S21dB(I,Q):
     """
-    Calculates |S21| in dB, from its real I and imaginary Q parts
+    Calculates |S21| (in dB), from its real I and imaginary Q parts
     """
     S21dB = 20*np.log10(np.sqrt(np.multiply(I,I)+np.multiply(Q,Q)))
     return S21dB
 def IQ_to_phase(I,Q):
     """
-    Calculates the phase, from real I and imaginary Q parts
+    Calculates the phase (in rad), from real I and imaginary Q parts
     """
     phase = np.arctan2(I,Q)
     return phase
