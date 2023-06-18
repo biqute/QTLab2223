@@ -2,73 +2,64 @@
 Laboratory of Solid State and Quantum Technologies  
 Laboratory classe for the Master's degree in Physic at the University of Milano-Bicocca.
 
-##### Table of Contents  
-- [How we comunicate with the VNA device](#how-we-comunicate-with-the-VNA-device)  
-    - [A brief _operative_ guide on how the VNA works](#a-brief-operative-guide-on-how-the-VNA-works)
-    - [The _ManageInstrument_ class](#the-ManageInstrument-class)
-        - [Example: extablish a connection with the device and perform a measure](#example-extablish-a-connection-with-the-device-and-perform-a-measure)
+## Instrument comunication
+The folder "/src" contains libraries for performing comunication with those instrument that you can find in the laboratory of Quantum Technologies in Milano Bicocca:
+- "FieldFox Handheld Microwave Vector Network Analyzer" (vna.py)
+- "R&S®SMA RF and microwave signal generator" (sma.py)
+- "R&S®FSV Signal and spectrum analyzer" (fsv.py)
+- "SIM928 — Rechargeable isolated voltage source" (sim.py)
 
-## How we comunicate with the VNA device
-Here we provide a class **ManageInstrument** that allows sending queries to a VNA device in LAN. By sending queries to the device, we can send instructions to the device and read the displayed data into arrays. 
-### A brief _operative_ guide on how the VNA works
-The device can work in two modes: "**Continuos** Scan" and "**Single** Scan".
-* In **Continuos scan** mode, the instrument makes consecutive scans as time passes. At each scan, it measures an entry of the S matrix (e.g. S21) for a certain number of equally spaced frequencies in the interval displayed on the device screen. Those measurements are stored in the memory of the instrument, where the device mantains _only the last_ "AVE" measurements (where "AVE" is a parameter _of the device_ that we can set). Once it performs a new scan, the oldest measurement in the memory is replaced by the new scan measurement.
-* Instead in **Single scan** mode we have to query the instrument each time we want to make a scan; this mode provides a better control of the measurement procedure, so we'll _always_ set the device on this mode.
+In order to use remotely an instrument, firstly you need to **create an object** of the class corresponding to the device you want to use. Then the remote control is performed by calling methods on that object. A guided procedure is showed in the **demo notebook** (that you can find in folder "/demo") corresponding to the instrument.
+### Instruments' main methods
+Here are briefly described the main methods for controlling each device. Other methods' descriptions are reported in the libraries' code as comments.
+#### **vna.py**
+Vector network analyzer
 
-The value displayed on the screen for each frequency its an **average** of all the measurements stored in the device memory; as a consequence, before performing a measurement, you have to _clear_ the memory of the instrument.
-set the value of the _device parameter_ "AVE" and then perform "AVE" scans in order to fill the memory of the instrument. At last we read the values displayed on the screen, which are an average of the measurements performed.
-    
-**Schematically** when we use the device, we have to follow this procedure:
-* Clear the device memory and set the number of measurements the device stores (those are the values whose average will be displayed on the screen);
-* Set the displayed frequency interval (any scan is performed only along the interval [fmin,fmax] displayed on the screen);
-* Make as many scans as the number of measurements the device stores (we set this parametere before) and **then** read the data displayed on the screen.
-
-The "single_scan(...)" method in the "ManageInstrument" class makes the device follow this procedure.
- 
-## The _ManageInstrument_ class
-With this class you can create an object that allows you to communicate with the instrument.
-```bash
-ManageInstrument
-│  
-├── instr              # pyvisa.Resource object that contains a reference to the
-|                      # device and allows sending queries with the method instr.query()
-├── single_scan()      # A method that sets the desired device parameters, performs
-                       # the desired number of scans and returns the values displayed on
-                       # the device screen into arrays
-```
-### Example: extablish a connection with the device and perform a measure 
 ```python
-"""ESTABLISH A CONNECTION WITH THE DEVICE"""
-import vna
-import matplotlib.pyplot as plt
-IP = "<device_address>"
-instrument = vna.ManageInstrument(IP)
-
-"""SET THE DESIRED PARAMETER BEFORE PERFORMING THE MEASUREMENTS"""
-# Set [fmin,fmax] that is the frequency interval along which the scans are performed
-fmin = 1e9
-fmax = 3e9
-# Set the power of the monotone waves sent into the port 1 to measure the selected matrix element (e.g. S21)
-powerdBm = -15 #dBm
-# Set the number of equally spaced frequencies in the interval [fmin,fmax] sampled at each scan
-npoints = 10
-# Set the number of scans performed (that is the number of measurements whose average is returned)
-navgs = 2
-
-"""
-PERFORM THE MEASURE
-We call the single_scan() method with the above parameters.
-The method returns:
--freq: an array containing the sampled equally spaced frequencies.
--I and Q: respectively the real and the imaginary part of the matrix element values corresponding to the frequencies in "freq".
-"""
-freq, I, Q = instrument.single_scan(fmin,fmax,powerdBm,npoints,navgs)
-# Here we calculate the matrix element in dB, form its real and imaginary parts
-S21 = vna.IQ_to_S21(I,Q)
-
-plt.plot(freq,S21)
-plt.show()
+freqs, I, Q = single_scan(fmin,fmax,powerdBm,ifbw,npoints,navgs)
 ```
+This method performs a scan of the selected port $S_{ij}$ spectrum, that is the ratio between the output power coming from port $i$ and the input power injected in port $j$ by an internal local oscillator ($i,j\in\{1,2\}$). It is a function of the frequency $f$ and its a complex number $$S_{ij}(f) = I(f)+iQ(f)$$
+It returns an array _freqs_ containing the sampled frequencies, and two arrays _I_ and _Q_ containing the values of I and Q for the sampled frequencies.
+
+The scan is performed by sampling _npoints_ equally spaced frequencies in the range \[_fmin_,_fmax_\]. _powerdBm_ is the power of the signal generated by the internal local oscillator and _ifbw_ is the "IF Bandwidth", that is the width of the passband filter used to sample each frequency output power.
+If _navgs_ $\neq0$ then _navgs_ scans are performed and the the method returns an average of the _navgs_ sampled spectrums.
+
+When the vna object is created, you can choose a parameter _max\_points_. If you call _single\_scan(...)_ with _npoints_ $>$ _max\_points_, then a method called  _multi\_scan(...)_ is invoked, which divides the selected frequency span in many smaller sub-intervals and calls the method _single\_scan(...)_ for each interval.
+
+A vna object has two methods for computing the modulus (in dB) and the phase (in rad) of $S_{ij}(f)$ from the arrays _I_ and _Q_
+```python
+S21dB = IQ_to_S21dB(I,Q)
+phase = IQ_to_phase(I,Q)
+```
+#### **sma.py**
+RF signal generator
+
+```python
+Sets the generated signal frequency (in Hz)
+set_freq(freq)
+Sets the generated signal power (in dBm)
+set_amplitude(pow)
+Sets the generator state (0: Off, 1: On)
+set_output(state)
+```
+#### **fsv.py**
+Spectrum analyzer
+
+This method is analogous to the one with the same name in "vna.py", but this device (the FSV) has only one port so it does not work as a vector analyzer, but as a _spectrum analyzer_. This time the method returns the power (in dBm) of each sampled frequency in the incoming signal.
+```python
+freq, power = single_scan(fmin,fmax,npoints,navgs)
+```
+#### **sim.py**
+DC voltage generator
+
+```python
+Sets the generator voltage (in V) 
+set_voltage(self, value)
+Sets the generator state (0: Off, 1: On)
+set_output(state)
+```
+
+**Note that:** the voltage value is rounded at the mV cifer.
 
 
 ## Contributors
