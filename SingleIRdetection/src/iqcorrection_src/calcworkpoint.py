@@ -26,7 +26,7 @@ def CalcWorkPoint(spectra_file_name, npoints, ncol, coli, colq, iqfileheader, if
     posbuff = list()
 
     #Load I and Q from the data file. Not any IQ dataset: we load IQ data relative to a frequency sweep witrh the cryostat cold and connected!
-    [f, idata, qdata] = LoadIQ(iqfileheader)
+    [f, idata, qdata] = LoadIQ(iqfileheader + '_')
 
     for j in range(50):
         #Load I and Q from the spectra file, aka the file containing the pulse data
@@ -55,7 +55,7 @@ def CalcWorkPoint(spectra_file_name, npoints, ncol, coli, colq, iqfileheader, if
             else:
                 noisei = signali[npoints - bb - 1: npoints]
                 noiseq = signalq[npoints - bb - 1: npoints]
-            
+                
             b = np.mean(noisei)
             c = np.mean(noiseq)
 

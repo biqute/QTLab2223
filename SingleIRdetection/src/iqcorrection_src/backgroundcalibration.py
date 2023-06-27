@@ -16,11 +16,17 @@ from qcalc import QCalc
 
 def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
 
+    checkpath = globvar.checkpath
     nchan = globvar.nchan
-    #Load the IQ loop data and subtract the offset from the separate offset
-    #measurement
 
-    # -------- NORMAL FREQUENCY RANGE -----------
+    if nchan == 1:
+        iqname = iqfileheader[-3:]
+    else:
+        iqname = iqfileheader[-6:]
+
+    # Load the IQ loop data and subtract the offset from the separate offset measurement
+
+    # ---------------------------- NORMAL FREQUENCY RANGE --------------------------------------
 
     # -> Here we load IQ data for the frequency swipe with the cryostat plugged in and cold
     [f, idata, qdata] = LoadIQ(iqfileheader + '_')
@@ -28,82 +34,107 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     if fmeas > np.min(f) and fmeas < np.max(f):
         DispLog('- BackgroundCalibration(): OK: Correct Frequency range')
     else:
-        DispLog('- BackgroundCalibration(): Error: Wrong Frequency range')
+        DispLog('- BackgroundCalibration(): ERROR: Wrong Frequency range')
         #return
-    
+
+    # Original IQ from file
+    if ifplot == 1:
+        fig1, axs = plt.subplots(1, 3, figsize = (18, 5))
+        fig1.suptitle('BackgroundCalibration || 1')
+        axs[0].plot(idata, qdata, label = 'Original IQ loop')
+        axs[0].plot(idata[0], qdata[0], marker = 'o', label = 'Start frequency')
+        #axs[0].plot((f-fmeas)/1e9 * 100, idata**2 + qdata**2)
+        axs[0].set_xlabel('I')
+        axs[0].set_ylabel('Q')
+        axs[0].legend()
+        axs[0].set_title('Original Loop')
+
     # -> Here we load IQ data for the frequency swipe with the cryostat unplugged
     [f0, i0, q0] = LoadIQ(iqfileheader + 'off_')
+
+    # Check if the frequency ranges for the two IQ files (one with the cryostat unplugged, one with the cryostat cold) have the same lengths    
     CompareVector(f, f0)
     idata = idata - i0
     qdata = qdata - q0
 
-    # -> Here we correct for the mixer imperfection using fit results on the calibration file, which are stored in the mixer class
+    # IQ after NOISE SUBTRACTION
+    if ifplot == 1:
+        axs[1].plot(idata, qdata, 'r', label = 'Line noise correction')
+        axs[1].plot(idata[0], qdata[0], marker = 'o', label = 'Start frequency')
+        #axs[1].plot((f-fmeas)/1e9 * 100, i0**2 + q0**2)
+        axs[1].set_xlabel('I')
+        axs[1].set_ylabel('Q')
+        axs[1].legend()
+        axs[1].set_title('Line Correction')
+
+    # -> Here we correct for the mixer imperfection using results from the fitting performed on the calibration file, which are stored in the mixer class
     [idata, qdata] = CorrectIQ(idata, qdata, mixer)
 
-    # -------- WIDE FREQUENCY RANGE -----------
+    # IQ after MIXER CORRECTION
+    if ifplot == 1:
+        axs[2].plot(idata, qdata, 'g', label = 'Mixer correction')
+        axs[2].plot(idata[0], qdata[0], marker = 'o', label = 'Start frequency')
+        axs[2].legend()
+        axs[2].set_xlabel('I')
+        axs[2].set_ylabel('Q')
+        axs[2].set_title('Mixer Correction')
 
-    # Now we do exactly the same for the wide frequency range swipe!
+        if checkpath:
+            fig1.savefig(checkpath + '\\BackgroundCorrection_' + iqname + '_FirstCorrections.pdf', format = 'pdf')
 
-    # -> Here we load IQ data for the frequency swipe with the cryostat plugged in and cold
+    # ---------------------------- WIDE FREQUENCY RANGE --------------------------------------
+
+    # -> Here we load IQ data for the frequency swipe with the cryostat plugged in and cold and with the cryostat unplugged, this time for the wide frequency range
     [fw, iw, qw] = LoadIQ(iqfileheader + 'w_')
     [f0w, i0w, q0w] = LoadIQ(iqfileheader + 'offw_')
     iw = iw - i0w
     qw = qw - q0w
     [iw, qw] = CorrectIQ(iw, qw, mixer)
 
-    # Crudely estimate of the resonance frequency, by observing S21 slightly
-    # corrected data (we put the origin in the right place, nothing else)
+    # Crudely estimate of the resonance frequency, by observing S21 slightly corrected data (we put the origin in the right place, nothing else)
     indexmin = np.argmin(np.square(idata) + np.square(qdata))
     fmin = f[indexmin]
 
-    # Now we fit the background through polynomials
+    # Now we fit the background through polynomials. Remember that the vector 'f' contains the frequencies 
+    # near the resonance, while 'fw' contains a wide range of frequencies, including that one
     background = FindIQCorrection(fw, iw, qw, np.array([np.min(f), np.max(f)]), fmin, iqfileheader, ifplot)
-
     s21corr = CorrectIQBackground(f, (idata + 1j*qdata), background)
 
-    #find the mixer offset at the pulse measurement frequency for use later
-    f0i0model = interp1d(f0, i0)    #(?) I'll leave a question mark here but i'm pretty sure this reproduces the matlab result
-    f0q0model = interp1d(f0, q0)
+    if ifplot == 1:
+        fig2, axs = plt.subplots(2, 3, figsize = (18, 12))
+        fig2.suptitle('Background Calibration')
+        axs[0, 0].plot(np.real(s21corr), np.imag(s21corr), label = 'Background correction')
+        axs[0, 0].plot(np.real(s21corr[0]), np.imag(s21corr[0]), marker = 'o', label = 'Start IQ')
+        axs[0, 0].legend()
+        axs[0, 0].set_title('Background Correction')
 
+    # Find the mixer offset at the pulse measurement frequency for use later
+    f0i0model = interp1d(f0, i0)
+    f0q0model = interp1d(f0, q0)
     xnew = fmeas
     yi0new = f0i0model(xnew)
     yq0new = f0q0model(xnew)
-    
-    if ifplot == 1:
-        plt.plot(f0, i0, 'r', linewidth = 1.5, label = 'Data')
-        plt.plot(f0, f0i0model(f0), 'b', linewidth = 0.5, label = 'Fit')
-        plt.plot(xnew, yi0new, 'o')
-        plt.legend(loc = "upper left")
-        plt.title('BackgroundCalibration -> I0')
-        plt.show()
-
-        plt.plot(f0, q0, 'r', linewidth = 1.5, label = 'Data')
-        plt.plot(f0, f0q0model(f0), 'b', linewidth = 0.5, label = 'Fit')
-        plt.plot(xnew, yq0new, 'o')
-        plt.legend(loc = 'upper left')
-        plt.title('BackgroundCalibration -> Q0')
-        plt.show()
-
     background.I0 = yi0new
     background.Q0 = yq0new
     
-    #the IQ loop should be a circle now, but may be
-    #rotated so that it does not point toward the origin.
-    #First fit to a circle (actually an ellipse)
+    # The IQ loop should be a circle now, but may be
+    # Rotated so that it does not point toward the origin.
+    # First fit to a circle (actually an ellipse)
 
     [r1, r2, x0, y0, phi] = EllipseFit(np.real(s21corr), np.imag(s21corr))
 
-    #This is the equation describing the ellipse - just plot this to check
-    #that the fit figured out the right parameters.
-    #
-
     def ellipse_param(x):
         return x0 + r1*np.cos(x)*np.cos(phi)-r2*np.sin(x)*np.sin(phi) + 1j*(y0 + r1*np.cos(x)*np.sin(phi) + r2*np.sin(x)*np.cos(phi))
-    
     t = np.linspace(0, 2*scipy.pi, 500)
+    
+    if ifplot == 1:
+        axs[0, 1].plot(np.real(s21corr), np.imag(s21corr), label = ' Corrected S21')
+        axs[0, 1].plot(np.real(ellipse_param(t)), np.imag(ellipse_param(t)), 'r', label = 'Fitting Ellipse')
+        axs[0, 1].legend()
+        axs[0, 1].set_title('Ellipse')
 
-    #now we fit for the rotation and the Q, while constraining the model to stay
-    #on the circle from the previous fit
+    # Now we fit for the rotation and the Q, while constraining the model to stay
+    # on the circle from the previous fit
 
     r = np.mean([r1, r2])
 
@@ -115,136 +146,58 @@ def BackgroundCalibration(iqfileheader, mixer, fmeas, ifplot):
     
     a0 = [0, 10, 0]
 
-    #find out if the points are going clockwise or counterclockwise around
-    #the center of the circle and adjust the initial guess accordingly -
-    #we make the 'Q' parameter initial guess negative if the slope of the
-    #phase is negative  
+    # Find out if the points are going clockwise or counterclockwise around
+    # the center of the circle and adjust the initial guess accordingly -
+    # We make the 'Q' parameter initial guess negative if the slope of the
+    # phase is negative
 
-    p = np.polyfit(f-f[0], np.unwrap(np.angle(s21corr - x0 + 1j*y0)), 1)
+    p = np.polyfit(f - f[0], np.unwrap(np.angle(s21corr - x0 + 1j*y0)), 1)
     a0[1] = np.sign(p[0]) * a0[1]
     a = scipy.optimize.fmin(mychi2, a0)
-    #figure
-    #plot( f, angle( S21_corr), f, angle( mymodel( a, f)))
 
-    #rotation of loop away from the origin
-    #background.loop_rotation = a(1);
-    #get this instead from the angle between the off resonance point and
-    #the center of the circle
+    if ifplot == 1:
+        axs[0, 2].plot(mymodel(a, f), 'g')
+        axs[0, 2].set_title('Model')
 
-    off_res_point = mymodel(a, 0)   #(take point far away from resoance ie. f = 0Hz)
-    background.LoopRotation = np.angle(-off_res_point)
+    off_res_point = mymodel(a, 0)
 
-    #overall rotation
+    # Loop rotation
+    background.LoopRotation = np.angle(x0 + 1j*y0 - off_res_point)
+
+    # Overall rotation
     background.OverallRotation = np.angle(off_res_point)
 
-    #keyboard
-    s210 = s21corr
-    s21corr = s21corr *np.exp(-1j*background.OverallRotation)
+    #s210 = s21corr
+    s21corr = s21corr*np.exp(-1j*background.OverallRotation)
 
-    #if ifplot
-    #figure(HH)
-    #plot(real( S21_corr), imag( S21_corr),'m');
-    #hold on
-    #plot(real( S21_corr(1)), imag( S21_corr(1)),'--rs',...
-    #    'MarkerEdgeColor','y',...
-    #    'MarkerFaceColor','r',...
-    #    'MarkerSize',2);
-    #hold on
+    if ifplot == 1:
+        axs[1, 0].plot(np.real(s21corr), np.imag(s21corr), label = 'S21 - Loop Rotation')
+        axs[1, 0].plot(np.real(s21corr[0]), np.imag(s21corr[0]), 'o', label = 'S21 Start')
+        axs[1, 0].legend()
+        axs[1, 0].set_title('S21 - Loop Rotation Correction')
 
-    #then rotate aournd (1,0) by the angle by which the IQ loop is tilted
-    #note:  following the analysis of Khalil et al, arXiv:1108.3117v3, we
-    #also scale the loop by the cos of the rotation angle
+    # We then rotate aoround (1,0) by the angle by which the IQ loop is tilted
+    # note: following the analysis of Khalil et al, arXiv:1108.3117v3, we
+    # also scale the loop by the cos of the rotation angle
 
     s21corr = 1 - np.cos(background.LoopRotation)*np.exp(-1j*background.LoopRotation)*(1 - s21corr)
     
-    '''if ifplot
-    figure(HH);
-    plot(real( S21_corr), imag( S21_corr),'b');
-    hold on
-    plot(real( S21_corr(1)), imag( S21_corr(1)),'--rs',...
-        'MarkerEdgeColor','y',...
-        'MarkerFaceColor','r',...
-        'MarkerSize',2);
-    plot([0,1],[0,0],'--rs',...
-        'MarkerEdgeColor','k',...
-        'MarkerFaceColor','g',...
-        'MarkerSize',2);
-    legend('1 Original IQ','1 fstart','2 line correction','2 fstart','3 mixer corr','3 fstart',...
-        '4 background corr','4 fstart','5 bg rotation','5 bg start','6 (0,1) rotation','6 fmin')
-    xlabel('I');
-    ylabel('Q');
-    axis([-ADCconv ADCconv -ADCconv ADCconv]);
-    '''
-    if nchan == 1:
-        iqname = iqfileheader[-3:-1]
-    else:
-        iqname = iqfileheader[-6: -1]
-    '''  
-    title([IQname, ' Corrections']);
-    grid on
+    if ifplot:
+        axs[1, 1].plot(np.real(s21corr), np.imag(s21corr), 'b', label = 'S21 - Overall Rotation')
+        axs[1, 1].plot(np.real(s21corr[0]), np.imag(s21corr[0]), 'o')
+        axs[1, 1].plot([0, 1], 'o', label = '(0, 1)')
+        axs[1, 1].plot([0, 0], 'o', label = '(0, 0)')
+        axs[1, 1].legend()
+        axs[1, 1].set_xlabel('I')
+        axs[1, 1].set_ylabel('Q')
+        axs[1, 1].set_title('S21 - Overall Rotation Correction')
 
-    print(HH,'-dpdf',[checkpath,'/ResonanceEvo',IQname,'.pdf']);
-    hgsave(HH,[checkpath,'/ResonanceEvo',IQname,]);
+        if checkpath:
+            fig2.savefig(checkpath + '\\BackgroundCorrection_' + iqname + '_SecondCorrections.pdf', format = 'pdf')
     
-    end
-    '''
-
     outx = np.real(s21corr)
     outy = np.imag(s21corr)
 
-    resonance = outx + outy
-    x0 = [r, 100000, fmeas]
-
     [qtot, f0, qi, qc] = QCalc(f, outx, outy, iqname, ifplot)
-    #resdata = [qtot, f0, qi, qc]
-
-
-    '''
-    if ifplot
-    %     GR=figure;
-    %     plot(f,resonance);
-    %     hold on
-    %     plot(curve2,'r');
-    %     title( 'Fit IQ quadrature')
-    %     legend('data','fit')
-    %     xlabel('Frequency');
-    %     ylabel('sqrt(I^2 +Q^2)');
-    %  
-    %     print(GR,'-dpdf',[checkpath,'/ResonanceFit', iqname, '.pdf'])
-    %     
-    %     
-        if 0
-            phase=-angle(S21_corr);
-            
-            
-            fo = fitoptions('Method','NonlinearLeastSquares',...    #(?)
-                'Lower',[0,0,curve2.c-curve2.c*0.000001],...
-                'Upper',[1,900000000,curve2.c+curve2.c*0.000001],...
-                'StartPoint',[curve2.a*1.3,curve2.b,curve2.c]);
-            ft = fittype('2*a*b*((x-c)/c)./(1+(2*b*((x-c)/c)).^2)','options',fo);
-            coeffnames(ft)
-            [curve1]=fit(f,resonance,ft);
-            G = @(x,xdata) 2*x(1)*x(2)*((xdata-x(3))/x(3))./(1+(2*x(2)*((xdata-x(3))/x(3))).^2);
-            t0 = [curve2.a curve2.b curve2.c];
-            
-            figure
-            
-            plot(f,phase);
-            hold on
-            plot(curve1,'r');
-            hold on
-            plot(f,G(t0,f),'y');
-        end
-        
-        figure( iqfig)
-        plot( S21_corr, 'm')
-        title( 'S21 Callibration')
-        legend('S21 corr','ellipse','mymodel','Rotated S21')
-        xlabel('I normalized units');
-        ylabel('Q normalized units');
-        
-        print(iqfig,'-dpdf',[checkpath,'/',IQname,'.pdf'])
-    end
-    ''' 
 
     return [background, outx, outy, f, qtot, f0, qi, qc]

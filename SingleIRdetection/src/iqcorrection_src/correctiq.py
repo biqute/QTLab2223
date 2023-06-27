@@ -7,7 +7,7 @@ def CorrectIQ(Idata, Qdata, mixer):
 # inputs:
 #   Idata -     I quadrature
 #   Qdata -     Q quadrature
-#   mixer -     structure returned by cal_IQ.m
+#   mixer -     structure returned by calIQ after the calibration file fitting
 # outputs:
 #   Icor -      corrected I
 #   Qcor -      corrected Q

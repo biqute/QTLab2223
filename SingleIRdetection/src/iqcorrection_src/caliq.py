@@ -72,6 +72,7 @@ def Cal_IQ(mixercalfile, icol, qcol, ifplot):
         nch = 2
 
     if ifplot == 1:
+        plt.figure(figsize=(10,10))
         x = ai * np.cos(th)
         y = aq * np.cos(th + gamma)
         plt.plot(idata, qdata, 'b', label = "Cal Data")
@@ -79,6 +80,7 @@ def Cal_IQ(mixercalfile, icol, qcol, ifplot):
         plt.plot(icor + i0, qcor + q0, 'g', label = 'Correction')
         plt.legend(loc = 'upper left')
         plt.title('CalIQ() -> IQ Calibration Plot for channel ' + str(nch))
+        plt.axis('scaled')
         plt.show()
 
     return mixer
