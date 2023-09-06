@@ -24,12 +24,12 @@ import globvar
 #def ConvertIQ2Af4(run_num, meas_num, spectra_path, iqpath, save_path, iqheader, mode, nch,  datatype):
 
 #Default settings block. Useful in order to debug the code, these should be the argument for the ConvertIQ2Af4 function.
-spectra_path = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\Data\\Spectra'
+spectra_path = '/home/alessandro/Lab/Correction/Spectra/'
 run_num = 34
 datatype = 'MixCh'
-meas_num = 1
-save_path = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\Save'
-iqpath = '\\Users\\alexb\\OneDrive\\Documenti\\Lab_locale\\iqcorrection\\iqcorrection_src\\IQ' + '\\run' + str(run_num) + '\\'
+meas_num = 1    
+save_path = '/home/alessandro/Lab/Correction/Save'
+iqpath = '/home/alessandro/Lab/Correction/' + 'run' + str(run_num) + '/'
 iqheader = ['IQ0Ch1', 'IQ0Ch2']
 nch = 2
 mode = 0
