@@ -8,7 +8,7 @@ from utilities import NumbersInString
 def DatasetCounter(group):
     count = 0
     for key in group.keys():
-        if isinstance(group, h5py.Dataset):
+        if isinstance(group[key], h5py.Dataset):
             count += 1
     return count
 
@@ -23,7 +23,7 @@ def DataFiles(data_path):
     data_files.sort(key = lambda f: (re.sub('\D', '', f)))
     return data_files
 
-def LoadData(data_file, skip = 21, delim = ','):
+def LoadSpectraData(data_file, skip = 21, delim = ','):
     data = np.loadtxt(data_file, skiprows = skip, delimiter = delim)
     return data
 
@@ -44,11 +44,11 @@ def RunBuild(data_path, verbosity = 0, eventlength = 2500):
 
     data_files = DataFiles(data_path)
     numfiles = len(data_files)
-    data = LoadData(data_files[0])
+    data = LoadSpectraData(data_files[0])
     recordlength0 = data.shape[0]
     recordlength = data.shape[0]
     for data_file in data_files[1:-1]:
-        temp_data = LoadData(data_file)
+        temp_data = LoadSpectraData(data_file)
         data = np.vstack([data, temp_data])
         recordlength += data.shape[0]
     data = DeleteInfs(data)
@@ -112,7 +112,7 @@ def RunsBuild(runs_path, verb = 1, evelength = 2500):
 
 def Frequency(freq_num):
     '''This simply translates the frequency number into the actual frequency value'''
-    frequencies = np.array([5.35, 5.58, 5.67, 5.98])
+    frequencies = np.array([5.3485, 5.576, 5.675, 5.984])
     return frequencies[freq_num - 1]
 
 def LoadSpectraData(freq_num, freq_path = '/home/alessandro/Lab/Data/Frequency_'):
@@ -133,24 +133,24 @@ def LoadSpectraData(freq_num, freq_path = '/home/alessandro/Lab/Data/Frequency_'
 
     return data, int(numchannels), int(num_events), int(event_length)
 
-def FindMixerEllipse(freq_num, mixer_calibration_path):
+def FindMixerCalibrationData(freq_num, mixer_calibration_path):
     '''This function finds the ellipse data folder at the frequency nearest to the input value'''
     freq = Frequency(freq_num)
     calibration_folders = os.listdir(mixer_calibration_path)
     min = 1
     for folder in calibration_folders:
         freq_ranges = NumbersInString(folder)
-        interval = freq_ranges[1] - freq_ranges[0]
-        avg = (freq_ranges[1] + freq_ranges[0])/2
+        interval = freq_ranges[3] - freq_ranges[1]
+        avg = (freq_ranges[3] + freq_ranges[1])/2
         if interval >= 0.003:
-            diff = freq - avg
+            diff = abs(freq - avg)
             if diff < min:
                 min = diff
                 calibration_folder = folder
     return calibration_folder
 
 def MixerCalibrationData(mixer_calibration_data_path):
-    '''Returns a matrix containing data for the IQ - Mixer ellipse'''
+    '''Returns the frequencies used to calibrate the mixer and a matrix containing data for the IQ - Mixer ellipse'''
 
     prefix = 'IQmixercal_'
     fname = prefix + '0.txt'
@@ -160,11 +160,47 @@ def MixerCalibrationData(mixer_calibration_data_path):
     I = np.loadtxt(mixer_calibration_data_path + 'run1/' + Iname)
     Q = np.loadtxt(mixer_calibration_data_path + 'run1/' + Qname)
 
-    data = np.column_stack([I, Q])
+    data = np.column_stack((I, Q))
     f = np.array(f)
     return f, data
+
+def FindIQCalibrationData(freq_num, iq_calibration_path):
+    '''This function finds the IQ data folders for the working frequency. In this case we retrieve 4 folders: narrow and wide frequency swipes (cryostat on and off)'''
+    this_frequency_calibration_folders = []
+
+    freq = Frequency(freq_num)
+    calibration_folders = os.listdir(iq_calibration_path)
+    for folder in calibration_folders:
+        folder_frequency = NumbersInString(folder)
+        if folder_frequency == freq:
+            this_frequency_calibration_folders.append(folder)
+        
+    # Alphabetically sort the array containing the calibration folders. This will be useful inside the main "correction.py"
+    this_frequency_calibration_folders = sorted(this_frequency_calibration_folders)
+    return this_frequency_calibration_folders
     
-    
+def IQCalibrationData(iq_calibration_data_path, run_num = 1):
+    '''Returns a matrix containing frequencies, Is and Qs'''
+
+    if '_narrow_off' in iq_calibration_data_path:
+        prefix = 'IQoff_'
+    elif '_narrow_on' in iq_calibration_data_path:
+        prefix = 'IQon_'
+    elif '_wide_off' in iq_calibration_data_path:
+        prefix = 'IQoffw_'
+    elif '_wide_on' in iq_calibration_data_path:
+        prefix = 'IQonw_'
+
+    # Here there is an additional possibility in respect of 'MixerCalibrationData': in principle we could choose between different runs
+    fname = prefix + '0.txt'
+    Iname = prefix + '1.txt'
+    Qname = prefix + '2.txt'
+    f = np.loadtxt(iq_calibration_data_path + 'run' + str(run_num) + '/' + fname)
+    I = np.loadtxt(iq_calibration_data_path + 'run' + str(run_num) + '/' + Iname)
+    Q = np.loadtxt(iq_calibration_data_path + 'run' + str(run_num) + '/' + Qname)
+
+    data = np.column_stack([f, I, Q])
+    return data
 
 
     
