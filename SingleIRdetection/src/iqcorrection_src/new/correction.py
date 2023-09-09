@@ -39,7 +39,6 @@ logdata.append(num_events)
 logdata.append(event_length)
 
 #--------------------------------- Mixer Calibration ------------------------------------------
-#-------------------------------------- [START] -----------------------------------------------
 
 # Retrieve the ellipse folder nearest to the working frequency
 mixer_calibration_folder = FindMixerCalibrationData(freq_num, mixer_calibrations_path)
@@ -60,21 +59,20 @@ logdata.extend([mixer.AI, mixer.AQ, mixer.I0, mixer.Q0, mixer.Amp])
 CorrectionLog(logdata)
 
 #--------------------------------- Mixer Calibration ------------------------------------------
-#-------------------------------------- [STOP] ------------------------------------------------
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 #--------------------------------- Background Calibration -------------------------------------
-#---------------------------------------- [START] ---------------------------------------------
 
 # We store the four different folders for IQ calibration in a variable
 iq_calibration_folders = FindIQCalibrationData(freq_num, iq_calibrations_path)
 iq_calibration_data_paths = SumStringsToStringArray(iq_calibrations_path, iq_calibration_folders, '/')
 
-# Now 'iq_calibration_data_paths' contains all the iq calibration folders names. They are alphabetically ordered, and this will help us later on.
-# We now correct for the IQ background
+# Now 'iq_calibration_data_paths' contains all the iq calibration folders names.
+# They are alphabetically ordered, and this will help us later on. We now correct for the IQ background
 [background, outx, outy, f, qtot, f0, qi, qc] = BackgroundCalibration(iq_calibration_data_paths, mixer, ifplot = plot)
+
+#--------------------------------- Background Calibration -------------------------------------
 
 
 

@@ -34,12 +34,12 @@ def FitIQWide(f_wide, i_wide, q_wide, f_window, fmin, ifplot):
     c = 3e8 
 
     # First determine the amplitude variation of the background with frequency
-    p_amp = np.polyfit(f_wide[ii]/f_wide_window, abs(i_wide[ii] + 1j*q_wide[ii]), bgpoldeg)
-    ref = [np.mean(abs(i_wide + 1j*q_wide)), np.mean(abs(i_wide + 1j*q_wide))]
+    p_amp = np.polyfit(f_wide[ii]/f_wide_window, np.absolute(i_wide[ii] + 1j*q_wide[ii]), bgpoldeg)
+    ref = [np.mean(np.absolute(i_wide + 1j*q_wide)), np.mean(np.absolute(i_wide + 1j*q_wide))]
 
     if ifplot == 1:
         fig, axs = plt.subplots(1, 3, figsize = (18, 5))
-        fig.suptitle('FindIQCorrection')
+        fig.suptitle('FitIQWide')
         axs[0].plot(f_wide, np.absolute(i_wide + 1j*q_wide), label = 'Abs(I,Q)')
         axs[0].plot(f_wide, np.polyval(p_amp, f_wide/f_wide_window), label = 'Background Fit')
         axs[0].plot(f_window, ref, 'o', 'g')
@@ -49,16 +49,17 @@ def FitIQWide(f_wide, i_wide, q_wide, f_window, fmin, ifplot):
         axs[0].legend()
 
     # Now determine the phase variation with frequency
-    p_phase = np.polyfit(f_wide[ii]/f_wide_window, np.unwrap(np.angle(i_wide[ii] + 1j*q_wide[ii])), 1)
+    p_phase = np.polyfit(f_wide[ii]/f_wide_window, np.angle(i_wide[ii] + 1j*q_wide[ii]), bgpoldeg)
     
     if ifplot == 1:
-        axs[1].plot(f_wide, np.unwrap(np.angle(i_wide + 1j*q_wide)), label = 'Angle(I, Q)')
+        axs[1].plot(f_wide, np.angle(i_wide + 1j*q_wide), label = 'Angle(I, Q)')
         axs[1].plot(f_wide, np.polyval(p_phase, f_wide/f_wide_window), label = 'Background Phase')
         axs[1].set_xlabel('Frequency - Resonance Frequency (Hz)')
         axs[1].set_ylabel('Angle (rad)')
         axs[1].set_title('Phase Background Fit')
         axs[1].legend()
 
+    # (?)
     def mymodel(a, b, ddf):
         return np.polyval(a, ddf/f_wide_window)*np.exp(1j*np.polyval(b, ddf/f_wide_window))
     
@@ -67,6 +68,9 @@ def FitIQWide(f_wide, i_wide, q_wide, f_window, fmin, ifplot):
         axs[2].plot(f_wide, q_wide, label = 'Q')
         axs[2].plot(f_wide, np.real(mymodel(p_amp, p_phase, f_wide)), 'r', label = 'Real Part of Background Fit')
         axs[2].plot(f_wide, np.imag(mymodel(p_amp, p_phase, f_wide)), 'm', label = 'Imaginary Part of Background Fit')
+
+        #axs[2].plot(f_wide, np.real(np.absolute(i_wide + 1j*q_wide)*mymodel(p_amp, p_phase, f_wide)), 'r', label = 'Real Part of Background Fit')
+
         axs[2].set_xlabel('Frequency - Resonance Frequency (Hz)')
         axs[2].set_ylabel('ADC values')
         axs[2].set_title('I and Q Background Fit')

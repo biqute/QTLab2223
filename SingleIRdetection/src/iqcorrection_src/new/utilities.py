@@ -1,4 +1,4 @@
-import globvar
+
 import sys
 import re
 
@@ -21,7 +21,7 @@ def SumStringsToStringArray(leftstring, stringarray, rightstring):
     return summedstring
 
 def Display(message, analysis_run = 1):
-    import os
+    import globvar
     from datetime import date
     today = date.today()
     logpath = globvar.logpath + '_run' + str(analysis_run) +'_' + str(today) + '.log'

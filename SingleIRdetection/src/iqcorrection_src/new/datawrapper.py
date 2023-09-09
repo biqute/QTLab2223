@@ -179,7 +179,7 @@ def FindIQCalibrationData(freq_num, iq_calibration_path):
     this_frequency_calibration_folders = sorted(this_frequency_calibration_folders)
     return this_frequency_calibration_folders
     
-def IQCalibrationData(iq_calibration_data_path, run_num = 1):
+def IQCalibrationData(iq_calibration_data_path, rowstoskip = 0, rowtostop = 1800, run_num = 1):
     '''Returns a matrix containing frequencies, Is and Qs'''
 
     if '_narrow_off' in iq_calibration_data_path:
@@ -195,9 +195,9 @@ def IQCalibrationData(iq_calibration_data_path, run_num = 1):
     fname = prefix + '0.txt'
     Iname = prefix + '1.txt'
     Qname = prefix + '2.txt'
-    f = np.loadtxt(iq_calibration_data_path + 'run' + str(run_num) + '/' + fname)
-    I = np.loadtxt(iq_calibration_data_path + 'run' + str(run_num) + '/' + Iname)
-    Q = np.loadtxt(iq_calibration_data_path + 'run' + str(run_num) + '/' + Qname)
+    f = np.loadtxt(iq_calibration_data_path + 'run' + str(run_num) + '/' + fname, skiprows = rowstoskip, max_rows = rowtostop)
+    I = np.loadtxt(iq_calibration_data_path + 'run' + str(run_num) + '/' + Iname, skiprows = rowstoskip, max_rows = rowtostop)
+    Q = np.loadtxt(iq_calibration_data_path + 'run' + str(run_num) + '/' + Qname, skiprows = rowstoskip, max_rows = rowtostop)
 
     data = np.column_stack([f, I, Q])
     return data
